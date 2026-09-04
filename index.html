@@ -262,6 +262,10 @@ select:focus, input:focus, textarea:focus{border-color:var(--red);}
 .empty-state{padding:36px 10px;text-align:center;color:var(--gray-500);font-size:13px;}
 .empty-state .ico{font-size:22px;margin-bottom:8px;opacity:.5;}
 
+/* Visão Geral: painel de resumo executivo (texto solto, tipografia confortável) */
+.vg-summary-panel{margin-bottom:18px;border-color:var(--gray-300);}
+.vg-summary-text{margin:0;font-size:14.5px;line-height:1.75;color:var(--gray-800);font-weight:500;max-width:920px;}
+
 /* Attention panel */
 .attn-list{display:flex;flex-direction:column;gap:8px;}
 .attn-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:9px;background:var(--gray-50);cursor:pointer;transition:background .12s;border:1px solid transparent;}
@@ -1093,7 +1097,7 @@ tbody tr:hover{box-shadow:0 6px 18px -12px rgba(43,46,49,.8);position:relative;z
 .report-summary, .report-section-title, .report-kpi-grid, .report-panel,
 .report-grid-2, .report-footer{margin-left:34px;margin-right:34px;}
 
-.report-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:22px;}
+.report-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:22px;break-inside:avoid;page-break-inside:avoid;}
 .report-kpi-grid > .kpi-card{flex:none;min-width:0;padding:13px 13px 12px;border-radius:13px;}
 .report-kpi-grid .kpi-value{font-size:21px;margin-top:9px;letter-spacing:-.5px;}
 .report-kpi-grid .kpi-label{font-size:10.5px;line-height:1.3;}
@@ -1154,7 +1158,7 @@ tbody tr:hover{box-shadow:0 6px 18px -12px rgba(43,46,49,.8);position:relative;z
   #reportPage .panel-title:before{background:#AC0000 !important;box-shadow:none !important;}
   #reportPage [data-info-toggle]{display:none !important;}
   /* no papel a largura é ~A4: fixa 5 colunas e compacta o card */
-  .report-kpi-grid{grid-template-columns:repeat(5,1fr) !important;gap:7px !important;margin-bottom:16px !important;}
+  .report-kpi-grid{grid-template-columns:repeat(5,1fr) !important;gap:7px !important;margin-bottom:16px !important;break-inside:avoid !important;page-break-inside:avoid !important;}
   .report-kpi-grid > .kpi-card{padding:9px 9px 8px !important;border-radius:10px !important;}
   .report-kpi-grid .kpi-value{font-size:16px !important;margin-top:6px !important;}
   .report-kpi-grid .kpi-label{font-size:8px !important;}
@@ -1440,7 +1444,6 @@ const OWNERS_LEGADO = {
    Fica gravada no navegador de cada pessoa. */
 const USUARIO_KEY = 'gc_usuario_atual';
 function usuarioAtual(){ try{ return localStorage.getItem(USUARIO_KEY) || ''; }catch(e){ return ''; } }
-function definirUsuario(nome){ try{ localStorage.setItem(USUARIO_KEY, nome); }catch(e){} }
 
 /* Ids excluídos nesta sessão — o backend usa a lista para não “ressuscitar”
    registros ao mesclar a base com a de outro usuário. */
@@ -1702,6 +1705,7 @@ function enrichList(rawList, config, refDate){
 /* ------------------------------- ESTADO ------------------------------- */
 const state = {
   view:'dashboard',
+  readOnly:false,
   demandas:[],
   config:null,
   filters:{ periodoIni:null, periodoFim:null, responsavel:[], editoria:[], areaSolicitante:[], status:[], prioridade:[], complexidade:[], publicoAlvo:[], canalPrincipal:[], statusEditorial:[] },
@@ -1716,32 +1720,8 @@ async function boot(){
   recomputeDerived();
   renderShell();
   navigate('dashboard');
-  if(!usuarioAtual()) pedirIdentificacao();
 }
 
-/* Pergunta quem está usando o painel, para registrar autoria das alterações. */
-function pedirIdentificacao(){
-  const nomes = (ds.getConfig().responsaveis||[]).filter(r=>r.ativo).map(r=>r.nome);
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.innerHTML = `<div class="modal-box" style="max-width:430px">
-    <div class="modal-head"><h2>Quem está usando o painel?</h2></div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--gray);margin:0 0 14px">Sua identificação fica gravada neste navegador e é usada para registrar quem alterou cada demanda.</p>
-      <div class="form-field"><label>Responsável</label>
-        <select id="selUsuario">${nomes.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('')}</select>
-      </div>
-    </div>
-    <div class="modal-foot"><button class="btn btn-primary" id="btnConfirmarUsuario">Confirmar</button></div>
-  </div>`;
-  document.body.appendChild(overlay);
-  $('#btnConfirmarUsuario', overlay).onclick = ()=>{
-    definirUsuario($('#selUsuario', overlay).value);
-    overlay.remove();
-    refreshTopStats();
-    toast('Identificado como ' + usuarioAtual() + '.');
-  };
-}
 /* Atualiza os dados a partir do armazenamento compartilhado (útil quando
    outro analista alterou a base) sem perder a tela/filtros atuais. */
 async function refreshData(){
@@ -1815,6 +1795,11 @@ function toggleMultiFilter(key,val){
   renderView();
 }
 function clearFiltersSilent(){ state.filters = { periodoIni:null, periodoFim:null, responsavel:[], editoria:[], areaSolicitante:[], status:[], prioridade:[], complexidade:[], publicoAlvo:[], canalPrincipal:[], statusEditorial:[] }; state._specialFilter=null; }
+function temFiltroAtivo(){
+  const f = state.filters;
+  return !!(f.periodoIni || f.periodoFim || state._specialFilter ||
+    ['responsavel','editoria','areaSolicitante','status','prioridade','complexidade','publicoAlvo','canalPrincipal','statusEditorial'].some(k=> f[k].length));
+}
 function applySpecialFilter(list){
   const sf = state._specialFilter;
   if(!sf) return list;
@@ -1889,13 +1874,13 @@ function renderShell(){
       </div>
       <button class="new-demand-btn" id="btnNewGlobal">${ICONS.plus} Nova Demanda</button>
       <nav class="nav">
+        <div class="nav-item" data-nav="visaogeral">${ICONS.eye} One Page Report</div>
         <div class="nav-item" data-nav="dashboard">${ICONS.dashboard} Dashboard</div>
         <div class="nav-item" data-nav="demandas">${ICONS.list} Demandas</div>
-        <div class="nav-item" data-nav="report">${ICONS.report} One Page Report</div>
         <div class="nav-item" data-nav="config">${ICONS.gear} Configurações</div>
       </nav>
       <div class="sidebar-art" aria-hidden="true">${ART.banner}</div>
-      <div class="sidebar-foot">Base ativa: <b id="sfCount">0</b> registros<br>Atualizado <b id="sfTime">—</b><br><span id="sfUser" class="sf-user"></span></div>
+      <div class="sidebar-foot">Base ativa: <b id="sfCount">0</b> registros<br>Atualizado <b id="sfTime">—</b></div>
     </aside>
     <div class="main">
       <div class="topbar">
@@ -1904,6 +1889,7 @@ function renderShell(){
           <div class="sub" id="pageSub">Visão executiva da carteira de demandas e comunicações</div>
         </div>
         <div class="topbar-right">
+          <span id="readOnlyBadge" class="badge" style="display:none;background:var(--warn-tint,#fff3cd);color:var(--warn,#8a6d3b);font-weight:700;gap:5px;align-items:center">${ICONS.lock} Somente leitura</span>
           <div class="updated-chip"><span class="dot"></span><span id="lastUpdateChip">Atualizado agora</span></div>
           <button class="btn btn-sm" id="btnRefresh" title="Atualizar dados">${ICONS.refresh} Atualizar</button>
           <button class="btn btn-sm" id="btnExportMenu">Exportar</button>
@@ -1914,7 +1900,7 @@ function renderShell(){
   `;
   $('#btnRefresh').onclick = refreshData;
   $('#btnNewGlobal').onclick = ()=>openDemandaModal(null);
-  $$('.nav-item').forEach(n=> n.onclick = ()=> navigate(n.dataset.nav));
+  $$('.nav-item').forEach(n=> n.onclick = ()=>{ state.readOnly = (n.dataset.nav==='visaogeral'); navigate(n.dataset.nav); });
   $('#btnExportMenu').onclick = openExportModal;
 }
 
@@ -1923,12 +1909,15 @@ function navigate(view){
   $$('.nav-item').forEach(n=> n.classList.toggle('active', n.dataset.nav===view));
   const titles = {
     dashboard:['Dashboard executivo','Visão executiva da carteira de demandas e comunicações'],
-    demandas:['Demandas & Comunicações','Consulte, edite e acompanhe todos os registros da base única'],
+    visaogeral:['One Page Report · somente leitura','Panorama executivo para a diretoria — resumo, indicadores-chave, agenda e riscos, sem edição de dados'],
+    demandas:['Demandas & Comunicações',state.readOnly?'Consulte e acompanhe os registros da base única (modo somente leitura)':'Consulte, edite e acompanhe todos os registros da base única'],
     report:['One Page Report','Status report executivo pronto para encaminhar à diretoria'],
     config:['Configurações','Gerencie as listas de apoio utilizadas pelos formulários e filtros']
   };
   $('#pageTitle').textContent = titles[view][0];
   $('#pageSub').textContent = titles[view][1];
+  const btnNew = $('#btnNewGlobal'); if(btnNew) btnNew.style.display = state.readOnly ? 'none' : '';
+  const roBadge = $('#readOnlyBadge'); if(roBadge) roBadge.style.display = state.readOnly ? 'inline-flex' : 'none';
   renderView();
 }
 
@@ -1939,20 +1928,13 @@ function refreshTopStats(){
   const str = d.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
   $('#sfTime').textContent = str;
   $('#lastUpdateChip').textContent = 'Atualizado em ' + str;
-  const su = $('#sfUser');
-  if(su){
-    su.innerHTML = usuarioAtual()
-      ? `Você: <b>${esc(usuarioAtual())}</b> <a href="#" id="trocarUsuario">trocar</a>`
-      : `<a href="#" id="trocarUsuario">Identifique-se</a>`;
-    const link = $('#trocarUsuario');
-    if(link) link.onclick = (e)=>{ e.preventDefault(); pedirIdentificacao(); };
-  }
 }
 
 function renderView(){
   recomputeDerived();
   refreshTopStats();
   if(state.view==='dashboard') renderDashboard();
+  else if(state.view==='visaogeral') renderVisaoGeral();
   else if(state.view==='demandas') renderDemandasView();
   else if(state.view==='report') renderOnePageReport();
   else if(state.view==='config') renderConfigView();
@@ -2316,6 +2298,132 @@ document.addEventListener('mouseleave', hideTip);
 window.addEventListener('scroll', hideTip, true);
 
 /* ================================ DASHBOARD ================================ */
+/* ============================================================================
+   VISÃO GERAL — versão unificada com o One Page Report.
+   Curadoria pensada para a diretoria: mantém os indicadores-chave e todos os
+   pontos de clique do Dashboard (cards, gráficos, listas), incorpora o resumo
+   executivo e a agenda de publicações do OPR, e remove os painéis de caráter
+   mais operacional (aging, heatmap, dia da semana, canal/público/objetivo,
+   top 5 comunicações e a série histórica de entradas x concluídas) — material
+   de acompanhamento do dia a dia da equipe, não de leitura executiva.
+   ============================================================================ */
+function renderVisaoGeral(){
+  const filtered = applyFilters(state.demandas);
+  const c = $('#content');
+  const _ativos = filtered.filter(d=>!STATUS_FINAIS.includes(d.status)).length;
+  const _atras = filtered.filter(d=>d.atrasada).length;
+  const _cSla = filtered.filter(d=>d.sla!=='N/A');
+  const _pSla = _cSla.length? Math.round(_cSla.filter(d=>d.sla==='Dentro').length/_cSla.length*100) : null;
+  const resumo = computeResumoExecutivo(state.demandas);
+
+  c.innerHTML = `
+    ${pageBanner({
+      eyebrow:'Gente & Cultura · One Page Report para a Diretoria',
+      title:'Panorama executivo, <em>somente leitura</em>',
+      sub: 'Leitura consolidada da carteira de demandas e comunicações — indicadores, agenda e riscos em uma única visão.',
+      stats:[
+        {v:fmtNum(filtered.length), k:'Na carteira'},
+        {v:fmtNum(_ativos), k:'Em aberto'},
+        {v:fmtNum(_atras), k:'Atrasadas', tone:_atras>0?'crit':'ok'},
+        {v:_pSla!==null? _pSla+'%':'—', k:'Dentro do SLA', tone:_pSla!==null&&_pSla<80?'warn':'ok'}
+      ]
+    })}
+    <div class="panel vg-summary-panel">
+      <div class="panel-head"><div><div class="panel-title">RESUMO EXECUTIVO</div><div class="panel-sub">Base completa, independente dos filtros aplicados na tela</div></div>${infoIcon('Texto gerado automaticamente a partir de toda a carteira — o mesmo conteúdo enviado no PDF executivo por e-mail à diretoria.')}</div>
+      <p class="vg-summary-text">${esc(resumo)}</p>
+    </div>
+    <div class="report-toolbar">
+      <button class="btn btn-primary" id="btnExportVGPdf">${ICONS.download} Exportar PDF executivo</button>
+      <span class="report-meta">Gera o status report em uma página, pronto para impressão ou envio à diretoria.</span>
+    </div>
+    ${temFiltroAtivo()? `<div class="report-meta" style="margin:-6px 0 14px;color:var(--warn)">⚠ Filtro ativo: os indicadores e gráficos abaixo refletem o filtro selecionado. O resumo acima continua sendo o da base completa.</div>` : ''}
+    <div class="filterbar" id="filterbar"></div>
+    ${renderActiveFilterChips()}
+
+    <div class="kpi-subhead">Números gerais</div>
+    <div class="kpi-grid kpi-grid-top" id="kpiGridOpTop"></div>
+    <div class="kpi-grid kpi-grid-hero" id="kpiGridOp"></div>
+
+    <div class="section-divider"><span class="lbl">Comunicação &amp; Governança</span><span class="line"></span></div>
+    <div class="kpi-subhead">Fluxo editorial</div>
+    <div class="kpi-grid kpi-grid-uniform" id="kpiGridEd"></div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">ATENÇÃO GERENCIAL</div><div class="panel-sub">Clique para abrir a lista filtrada</div></div>${infoIcon('Consolidado dos pontos que exigem decisão do gestor: atrasos, prazos próximos, bloqueios, prioridades críticas, itens fora do SLA e aprovações pendentes.')}</div>
+        <div id="attnPanel"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">GOVERNANÇA — ALERTAS EDITORIAIS ATIVOS</div><div class="panel-sub">Clique para abrir a comunicação</div></div>${infoIcon('Registros com conflito de agenda (múltiplas P1/P2 no mesmo dia) ou publicação iminente ainda não finalizada editorialmente.')}</div>
+        <div id="edAttnPanel"></div>
+      </div>
+    </div>
+
+    <div class="section-divider"><span class="lbl">Agenda &amp; Carga de Trabalho</span><span class="line"></span></div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">CARGA POR RESPONSÁVEL</div><div class="panel-sub">Clique em um responsável para abrir suas demandas</div></div>${infoIcon('Demandas abertas (não concluídas/canceladas) por responsável, com composição por status. Clique para abrir as demandas daquela pessoa.')}</div>
+        <div id="respChart"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">AGENDA DOS PRÓXIMOS 14 DIAS</div><div class="panel-sub">Clique para abrir o detalhe</div></div>${infoIcon('Publicações previstas para os próximos 14 dias corridos, considerando a carteira filtrada.')}</div>
+        <div id="vgAgendaPanel"></div>
+      </div>
+    </div>
+
+    <div class="section-divider"><span class="lbl">Distribuição da Carteira</span><span class="line"></span></div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">STATUS DAS DEMANDAS</div><div class="panel-sub">Clique em uma barra para abrir as demandas</div></div>${infoIcon('Distribuição da carteira filtrada pelo status operacional (fluxo de trabalho da demanda).')}</div>
+        <div class="chart-wrap" style="height:230px"><canvas id="chartStatus"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">POR EDITORIA</div><div class="panel-sub">Clique em uma barra para abrir as demandas</div></div>${infoIcon('Quantidade de demandas por Editoria — classificação única que substitui a antiga Categoria.')}</div>
+        <div class="chart-wrap" style="height:230px"><canvas id="chartEditoria"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-divider"><span class="lbl">Desempenho da Comunicação</span><span class="line"></span></div>
+    <div class="kpi-subhead">Funil de entrega <span class="subhead-note" id="perfBaseNote"></span></div>
+    <div class="kpi-grid kpi-grid-top" id="kpiGridPerfVol"></div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">FUNIL DE PERFORMANCE</div><div class="panel-sub">Do alcance à ação — perda em cada etapa</div></div>${infoIcon('Cada etapa do funil é somada sobre as peças já mensuradas (alcance maior que zero). A taxa entre etapas mostra quanto do público da etapa anterior avançou.')}</div>
+        <div id="funnelBody"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><div class="panel-title">INTERAÇÕES</div><div class="panel-sub">Como o público reage ao conteúdo</div></div>${infoIcon('Curtidas/reações, comentários e compartilhamentos somados sobre as peças mensuradas. O compartilhamento é o sinal mais forte: indica que o público endossou o conteúdo.')}</div>
+        <div id="interacoesBody"></div>
+      </div>
+    </div>
+    <div class="kpi-subhead">Taxas de desempenho</div>
+    <div class="kpi-grid" id="kpiGridPerfTaxas"></div>
+
+    <div class="section-divider"><span class="lbl">Leitura Gerencial</span><span class="line"></span></div>
+    <div class="panel">
+      <div class="panel-head"><div><div class="panel-title">INSIGHTS GERENCIAIS</div><div class="panel-sub">Gerados automaticamente a partir dos dados filtrados</div></div>${infoIcon('Leituras determinísticas geradas a partir dos indicadores operacionais e editoriais combinados — sem uso de IA externa.')}</div>
+      <div class="insight-list" id="insightList"></div>
+    </div>
+  `;
+
+  const fb = $('#filterbar'); fb.innerHTML = renderFilterBar(); bindFilterBar(fb, renderVisaoGeral);
+  bindActiveFilterChips(c);
+  bindInfoIcons(c);
+
+  renderKPIsOperacional(filtered);
+  renderKPIsEditorial(filtered);
+  renderPerformanceBlock(filtered);
+  renderAttnPanel(filtered);
+  renderEdAttnPanel(filtered);
+  renderRespChart(filtered);
+  renderAgendaPanel(filtered);
+  renderStatusChart(filtered);
+  renderEditoriaChart(filtered);
+  renderInsights(filtered);
+
+  const btnVGPdf = $('#btnExportVGPdf'); if(btnVGPdf) btnVGPdf.onclick = exportReportPdf;
+}
+
 function renderDashboard(){
   const filtered = applyFilters(state.demandas);
   const c = $('#content');
@@ -2380,7 +2488,7 @@ function renderDashboard(){
     <div class="section-divider"><span class="lbl">Carga &amp; Volume</span><span class="line"></span></div>
     <div class="grid-2">
       <div class="panel">
-        <div class="panel-head"><div><div class="panel-title">CARGA POR RESPONSÁVEL</div><div class="panel-sub">Clique em um responsável para abrir suas demandas</div></div>${infoIcon('Demandas ativas (não concluídas/canceladas) por responsável, com composição por status. Clique para abrir as demandas daquela pessoa.')}</div>
+        <div class="panel-head"><div><div class="panel-title">CARGA POR RESPONSÁVEL</div><div class="panel-sub">Clique em um responsável para abrir suas demandas</div></div>${infoIcon('Demandas abertas (não concluídas/canceladas) por responsável, com composição por status. Clique para abrir as demandas daquela pessoa.')}</div>
         <div id="respChart"></div>
       </div>
       <div class="panel">
@@ -2477,9 +2585,10 @@ function renderDashboard(){
   renderInsights(filtered);
 }
 
-function renderKPIsOperacional(filtered){
-  const gridTop = $('#kpiGridOpTop');
-  const grid = $('#kpiGridOp');
+/* Cálculo dos cards de "Números Gerais" — extraído para função própria para que
+   o mesmo bloco de indicadores possa ser reaproveitado tanto na tela (Dashboard/
+   Visão Geral, interativo) quanto no PDF executivo (estático). */
+function buildKPIsOperacionais(filtered){
   const ativos = filtered.filter(d=>!STATUS_FINAIS.includes(d.status));
 
   const atrasadas = filtered.filter(d=>d.atrasada).length;
@@ -2500,9 +2609,6 @@ function renderKPIsOperacional(filtered){
     {icon:'check', label:'Concluídas', value:concluidasTotal.length, tooltip:'Demandas com status = Concluída, considerando toda a carteira filtrada (sem restrição de período). Fecha a esteira: Total → Concluídas → Em Aberto.', tone:'ok', id:'concluidasTotal'},
     {icon:'target', label:'Concluídas dentro do prazo', value: pctNoPrazoTotal!==null? pctNoPrazoTotal+'%':'—', tooltip:'Percentual das demandas concluídas (mesmo grupo do card ao lado) cujo lead time ficou dentro do SLA da prioridade.', tone: pctNoPrazoTotal!==null&&pctNoPrazoTotal<80?'crit':'ok', id: pctNoPrazoTotal!==null?'concluidasTotal':null}
   ];
-  gridTop.innerHTML = cardsTop.map((c,i)=>kpiCard(c,i)).join('');
-  bindInfoIcons(gridTop);
-  $$('.kpi-card[data-kpi]', gridTop).forEach(el=> el.onclick = (e)=>{ if(e.target.closest('[data-info-toggle]')) return; handleKpiClick(el.dataset.kpi); });
 
   /* --- composição do card de destaque "Demandas em Aberto" --- */
   const emExecucao = ativos.filter(d=> d.status==='Em andamento' || d.status==='Em análise').length;
@@ -2527,14 +2633,27 @@ function renderKPIsOperacional(filtered){
     : `<div class="kpi-hero-foot"><div class="cap">Composição da carteira em aberto</div><div class="kpi-hero-legend"><span class="it">Nenhuma demanda em aberto no recorte atual.</span></div></div>`;
 
   const cards = [
-    {icon:'layers', label:'Demandas em Aberto', value:ativos.length, tooltip:'Demandas com status diferente de Concluída/Cancelada. A composição abaixo distribui essas demandas pelos estágios em aberto.', id:'ativas', hero:true, share:heroShare, foot:heroFoot},
-    {icon:'list', label:'Em fila (Backlog)', value:backlogEstrito, tooltip:'Demandas com status = Backlog: ainda não triadas/iniciadas. Diferente de "Demandas em Aberto", que soma todos os estágios em aberto.', id:'backlog'},
+    {icon:'layers', label:'Demandas Abertas', value:ativos.length, tooltip:'Demandas com status diferente de Concluída/Cancelada. A composição abaixo distribui essas demandas pelos estágios em aberto.', id:'ativas', hero:true, share:heroShare, foot:heroFoot},
+    {icon:'list', label:'Em fila (Backlog)', value:backlogEstrito, tooltip:'Demandas com status = Backlog: ainda não triadas/iniciadas. Diferente de "Demandas Abertas", que soma todos os estágios em aberto.', id:'backlog'},
     {icon:'alert', label:'Atrasadas', value:atrasadas, tooltip:'Data Planejada de Publicação vencida e status ainda não final.', tone: atrasadas>0?'crit':'', id:'atrasadas'},
     {icon:'clock', label:'Vencem em até 7 dias', value:venceEm7, tooltip:'Dias úteis até a Data Planejada de Publicação entre 0 e 7.', tone: venceEm7>0?'warn':'', id:'vence7'},
     {icon:'lock', label:'Bloqueadas', value:bloqueadas, tooltip:'Status = Bloqueada.', tone: bloqueadas>0?'warn':'', id:'bloqueadas'},
     {icon:'fire', label:'Críticas em aberto (P1)', value:criticasAbertas, tooltip:'Prioridade P1 – Crítica ainda não concluída/cancelada.', tone: criticasAbertas>0?'crit':'', id:'criticas'},
     {icon:'target', label:'% dentro do SLA', value: pctSla!==null? pctSla+'%':'—', tooltip:'SLA calculado por prioridade (dias úteis), considerando toda a carteira filtrada.', tone: pctSla!==null&&pctSla<80?'crit':'ok', id: pctSla!==null?'slaDentro':null}
   ];
+
+  return {cardsTop, cards};
+}
+
+function renderKPIsOperacional(filtered){
+  const gridTop = $('#kpiGridOpTop');
+  const grid = $('#kpiGridOp');
+  const {cardsTop, cards} = buildKPIsOperacionais(filtered);
+
+  gridTop.innerHTML = cardsTop.map((c,i)=>kpiCard(c,i)).join('');
+  bindInfoIcons(gridTop);
+  $$('.kpi-card[data-kpi]', gridTop).forEach(el=> el.onclick = (e)=>{ if(e.target.closest('[data-info-toggle]')) return; handleKpiClick(el.dataset.kpi); });
+
   grid.innerHTML = cards.map((c,i)=>kpiCard(c,i)).join('');
   bindInfoIcons(grid);
   $$('.kpi-card[data-kpi]', grid).forEach(el=> el.onclick = (e)=>{ if(e.target.closest('[data-info-toggle]')) return; handleKpiClick(el.dataset.kpi); });
@@ -3023,10 +3142,68 @@ function renderInsights(filtered){
 function emptyState(msg){ return `<div class="empty-state"><div class="ico">${ART.empty}</div>${esc(msg)}</div>`; }
 function destroyChart(key){ if(state.charts[key]){ state.charts[key].destroy(); delete state.charts[key]; } }
 
+/* ==========================================================================
+   VISÃO GERAL — resumo executivo e agenda (elementos incorporados do
+   One Page Report para dar à Visão Geral a mesma leitura executiva,
+   mantendo a interatividade do Dashboard: cliques em cards/gráficos
+   continuam abrindo o detalhe ou a lista filtrada.)
+   ========================================================================== */
+function computeResumoExecutivo(list){
+  const ativos = list.filter(d=>!STATUS_FINAIS.includes(d.status));
+  const atrasadas = list.filter(d=>d.atrasada);
+  const t0 = today();
+  const mesIni = new Date(t0.getFullYear(), t0.getMonth(), 1);
+  const concluidasMes = list.filter(d=> d.status==='Concluída' && d._dConc && d._dConc>=mesIni);
+  const cmComSla = concluidasMes.filter(d=>d.sla!=='N/A');
+  const pctPrazoMes = cmComSla.length? Math.round(cmComSla.filter(d=>d.sla==='Dentro').length/cmComSla.length*100) : null;
+  const comLeadAll = list.filter(d=>d.leadTime!==null);
+  const leadMedioAll = comLeadAll.length? (comLeadAll.reduce((a,d)=>a+d.leadTime,0)/comLeadAll.length).toFixed(1) : '—';
+  const comSla = list.filter(d=>d.sla!=='N/A');
+  const pctSla = comSla.length? Math.round(comSla.filter(d=>d.sla==='Dentro').length/comSla.length*100) : null;
+  const decisoes = list.filter(d=> !STATUS_FINAIS.includes(d.status) &&
+      (d.status==='Aguardando aprovação' || d.status==='Bloqueada' || d.statusEditorial==='Aguardando aprovação'));
+  const medidas = list.filter(d=>Number(d.alcance)>0);
+  const SS = k => medidas.reduce((a,d)=>a+(Number(d[k])||0),0);
+  const fAlc=SS('alcance'), fCliq=SS('cliques'), fAcao=SS('acoesConversoes');
+  const tCliqC = fAlc? fCliq/fAlc : 0;
+  const tConvC = fCliq? fAcao/fCliq : 0;
+  const comAlerta = list.filter(d=>d.alertaEditorial);
+
+  return `A carteira única de Gente & Cultura totaliza ${fmtNum(list.length)} registros, sendo ${fmtNum(ativos.length)} ativos. `+
+    `No mês corrente foram concluídas ${fmtNum(concluidasMes.length)} demanda${concluidasMes.length!==1?'s':''}`+
+    `${pctPrazoMes!==null? `, ${pctPrazoMes}% dentro do prazo acordado`:''}, com lead time médio de ${leadMedioAll} dias úteis. `+
+    `${atrasadas.length>0? `Há ${atrasadas.length} demanda${atrasadas.length>1?'s':''} atrasada${atrasadas.length>1?'s':''} que exige${atrasadas.length>1?'m':''} atenção imediata` : 'Não há demandas atrasadas no momento'}, `+
+    `${pctSla!==null? `e o cumprimento de SLA está em ${pctSla}%` : 'sem histórico suficiente para cálculo de SLA'}. `+
+    `${decisoes.length>0? `${decisoes.length} iten${decisoes.length>1?'s dependem':' depende'} de decisão ou desbloqueio para seguir. ` : ''}`+
+    `No eixo de comunicação, ${fmtNum(medidas.length)} peça${medidas.length!==1?'s':''} mensurada${medidas.length!==1?'s':''} somam ${fmtNum(fAlc)} de alcance, `+
+    `com ${pct(tCliqC)} de taxa de clique e ${pct(tConvC)} de conversão sobre os cliques`+
+    `${comAlerta.length>0? `; ${comAlerta.length} comunicaç${comAlerta.length>1?'ões seguem':'ão segue'} com alerta editorial ativo` : ''}.`;
+}
+/* Publicações previstas para os próximos 14 dias corridos — mesma janela do OPR,
+   porém com item clicável (abre o detalhe, respeitando o modo somente leitura). */
+function renderAgendaPanel(filtered){
+  const el = $('#vgAgendaPanel');
+  const t0 = today();
+  const lim14 = new Date(t0.getTime() + 14*86400000);
+  const agenda = filtered.filter(d=> !STATUS_FINAIS.includes(d.status) && d._dPlan && d._dPlan>=t0 && d._dPlan<=lim14)
+    .sort((a,b)=> a._dPlan-b._dPlan);
+  if(!agenda.length){ el.innerHTML = emptyState('Nenhuma publicação prevista para os próximos 14 dias, nos filtros selecionados.'); return; }
+  el.innerHTML = `<div class="attn-list">${agenda.map(d=>`
+    <div class="attn-row" data-id="${d.id}" data-tip="<b>${esc(d.titulo)}</b><br>${esc(d.canalPrincipal||'—')} · ${esc(d.responsavel||'—')}<br>Status editorial: ${esc(d.statusEditorial||'—')}<br><i>Clique para abrir o detalhe</i>">
+      <div class="l"><span class="attn-dot" style="background:var(--info)"></span><div><div class="attn-name">${esc(d.titulo)}</div><div class="attn-desc">${esc(d.canalPrincipal||'—')} · ${esc(d.responsavel||'—')}</div></div></div>
+      <div class="attn-count" style="font-size:11.5px;font-weight:700">${fmtD(d.dataPlanejadaPublicacao)}</div>
+    </div>`).join('')}</div>`;
+  $$('.attn-row', el).forEach(r=> r.onclick = ()=> openDetailModal(r.dataset.id));
+}
+
 /* ============================ ONE PAGE REPORT ============================ */
 function exportReportPdf(){
+  const voltarPara = state.view;
   if(state.view!=='report'){ navigate('report'); }
-  setTimeout(()=> window.print(), 150);
+  setTimeout(()=>{
+    window.print();
+    if(voltarPara!=='report') navigate(voltarPara);
+  }, 150);
 }
 function renderOnePageReport(){
   const c = $('#content');
@@ -3150,6 +3327,9 @@ function renderOnePageReport(){
 
       <div class="report-summary">${esc(resumo)}</div>
 
+      <div class="report-section-title">Números Gerais</div>
+      <div class="kpi-grid report-kpi-grid" id="reportKpiGridGerais"></div>
+
       <div class="report-section-title">Indicadores-chave</div>
       <div class="kpi-grid report-kpi-grid" id="reportKpis"></div>
 
@@ -3254,7 +3434,7 @@ function renderOnePageReport(){
   `;
   /* Indicadores no mesmo componente visual do dashboard */
   const repCards = [
-    {icon:'layers', label:'Demandas ativas', value:fmtNum(ativos.length), tooltip:'Registros com status diferente de Concluída/Cancelada.'},
+    {icon:'layers', label:'Demandas Abertas', value:fmtNum(ativos.length), tooltip:'Registros com status diferente de Concluída/Cancelada.'},
     {icon:'alert', label:'Atrasadas', value:fmtNum(atrasadas.length), tone: atrasadas.length>0?'crit':'', tooltip:'Data planejada de publicação vencida e demanda ainda em aberto.'},
     {icon:'clock', label:'Vencem em 7 dias', value:fmtNum(vence7.length), tone: vence7.length>0?'warn':'', tooltip:'Publicação prevista dentro dos próximos 7 dias úteis.'},
     {icon:'target', label:'Dentro do SLA', value: pctSla!==null? pctSla+'%':'—', tone: pctSla!==null&&pctSla<80?'crit':'ok', tooltip:'SLA por prioridade, em dias úteis, sobre toda a carteira.'},
@@ -3267,6 +3447,17 @@ function renderOnePageReport(){
   ];
   $('#reportKpis').innerHTML = repCards.map((x,i)=>kpiCard(x,i)).join('');
   bindInfoIcons($('#reportKpis'));
+
+  const {cardsTop: numGeraisTop, cards: numGeraisCards} = buildKPIsOperacionais(all);
+  /* No PDF os cards são todos "planos": a variante de destaque (com barra de
+     composição) só funciona bem na tela interativa — no papel ela distorcia
+     o grid de 5 colunas. Aqui achatamos o card "Demandas Abertas" para o
+     mesmo formato dos demais, garantindo 2 linhas de 5 cards, sem quebras. */
+  const numGeraisFlat = [...numGeraisTop, ...numGeraisCards].map(c =>
+    c.hero ? {icon:c.icon, label:c.label, value:c.value, tooltip:c.tooltip, tone:c.tone, id:c.id} : c
+  );
+  $('#reportKpiGridGerais').innerHTML = numGeraisFlat.map((c,i)=>kpiCard(c,i)).join('');
+  bindInfoIcons($('#reportKpiGridGerais'));
 
   $('#btnExportReportPdf').onclick = exportReportPdf;
 }
@@ -3285,7 +3476,7 @@ function renderDemandasView(){
     ${renderActiveFilterChips()}
     <div class="table-toolbar">
       <div class="search-box">${ICONS.search}<input type="text" id="tblSearch" placeholder="Buscar por ID, título, solicitante..." value="${esc(state.table.search)}"></div>
-      <button class="btn btn-primary" id="btnNewFromTable">${ICONS.plus} Nova Demanda</button>
+      ${state.readOnly? '' : `<button class="btn btn-primary" id="btnNewFromTable">${ICONS.plus} Nova Demanda</button>`}
     </div>
     <div class="table-wrap">
       <div class="table-scroll-top" id="tableScrollTop"><div class="table-scroll-top-inner" id="tableScrollTopInner"></div></div>
@@ -3301,7 +3492,7 @@ function renderDemandasView(){
   const fb = $('#filterbar'); fb.innerHTML = renderFilterBar(); bindFilterBar(fb, renderDemandasView);
   bindActiveFilterChips(c);
   $('#tblSearch').oninput = debounce(e=>{ state.table.search = e.target.value; state.table.page=1; renderTableBody(); },220);
-  $('#btnNewFromTable').onclick = ()=> openDemandaModal(null);
+  const btnNewFT = $('#btnNewFromTable'); if(btnNewFT) btnNewFT.onclick = ()=> openDemandaModal(null);
   $('#pageSizeSel').onchange = e=>{ state.table.pageSize = Number(e.target.value); state.table.page=1; renderTableBody(); };
   renderTableHead();
   renderTableBody();
@@ -3375,9 +3566,10 @@ function renderTableBody(){
         <td>${d.alertaEditorial? `<span class="alert-tag" title="${esc(d.alertaEditorial)}">⚠ Atenção</span>` : '—'}</td>
         <td><div class="row-actions">
           <button class="icon-btn" data-act="view" title="Visualizar">${ICONS.eye}</button>
+          ${state.readOnly? '' : `
           <button class="icon-btn" data-act="edit" title="Editar">${ICONS.edit}</button>
           <button class="icon-btn" data-act="dup" title="Duplicar">${ICONS.copy}</button>
-          <button class="icon-btn danger" data-act="del" title="Excluir">${ICONS.trash}</button>
+          <button class="icon-btn danger" data-act="del" title="Excluir">${ICONS.trash}</button>`}
         </div></td>
       </tr>`).join('');
   }
@@ -3637,24 +3829,26 @@ function openDetailModal(id){
         ${hist.length? hist.map(h=>`<div class="history-item"><div class="t">${new Date(h.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div><div>${esc(h.texto)}</div></div>`).join('') : '<div class="empty-state" style="padding:14px">Sem alterações registradas ainda.</div>'}
       </div>
       <div class="modal-foot">
+        ${state.readOnly? `<button class="btn" id="mCloseFoot">Fechar</button>` : `
         <button class="btn" id="mDup">${ICONS.copy} Duplicar</button>
-        <button class="btn btn-primary" id="mEdit">${ICONS.edit} Editar</button>
+        <button class="btn btn-primary" id="mEdit">${ICONS.edit} Editar</button>`}
       </div>
     </div>`;
   document.body.appendChild(overlay);
   $('#mClose',overlay).onclick = ()=>overlay.remove();
   overlay.onclick = e=>{ if(e.target===overlay) overlay.remove(); };
-  $('#mEdit',overlay).onclick = ()=>{ overlay.remove(); openDemandaModal(id); };
-  $('#mDup',overlay).onclick = ()=>{ overlay.remove(); doDuplicate(id); };
+  const mEdit = $('#mEdit',overlay); if(mEdit) mEdit.onclick = ()=>{ overlay.remove(); openDemandaModal(id); };
+  const mDup = $('#mDup',overlay); if(mDup) mDup.onclick = ()=>{ overlay.remove(); doDuplicate(id); };
+  const mCloseFoot = $('#mCloseFoot',overlay); if(mCloseFoot) mCloseFoot.onclick = ()=>overlay.remove();
 }
 
 /* ============================ MODAL: CONFIRMAÇÃO ============================ */
-function openConfirm(title, html, onConfirm){
+function openConfirm(title, html, onConfirm, confirmLabel){
   const overlay = document.createElement('div'); overlay.className='overlay';
   overlay.innerHTML = `<div class="modal modal-sm">
     <div class="modal-head"><h2>${esc(title)}</h2><div class="close" id="cClose">${ICONS.x}</div></div>
     <div class="confirm-body">${html}</div>
-    <div class="modal-foot"><button class="btn" id="cCancel">Cancelar</button><button class="btn btn-primary" style="background:var(--red);border-color:var(--red)" id="cOk">Excluir</button></div>
+    <div class="modal-foot"><button class="btn" id="cCancel">Cancelar</button><button class="btn btn-primary" style="background:var(--red);border-color:var(--red)" id="cOk">${esc(confirmLabel||'Excluir')}</button></div>
   </div>`;
   document.body.appendChild(overlay);
   $('#cClose',overlay).onclick = ()=>overlay.remove();
@@ -3672,10 +3866,11 @@ function openExportModal(){
     <div class="confirm-body">
       <p style="margin-top:0">Exporte a base única completa (demandas + comunicações), gere o PDF do relatório executivo ou restaure um backup salvo anteriormente.</p>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn" id="ePdf">${ICONS.download} Exportar PDF (One Page Report)</button>
+        <button class="btn" id="ePdf">${ICONS.download} Exportar PDF (Relatório Executivo)</button>
         <button class="btn" id="eCsv">Exportar CSV</button>
         <button class="btn" id="eJson">Exportar backup JSON (base + configurações)</button>
-        <label class="btn" style="justify-content:center">Restaurar backup JSON<input type="file" id="eImport" accept=".json" style="display:none"></label>
+        ${state.readOnly? '' : `<label class="btn" style="justify-content:center">Restaurar backup JSON<input type="file" id="eImport" accept=".json" style="display:none"></label>`}
+        ${(!MODO_GOOGLE && typeof window.storage==='undefined' && !state.readOnly)? `<button class="btn" id="eClearLocal" style="color:var(--gray-500)">Limpar dados locais deste navegador</button>` : ''}
       </div>
     </div>
     <div class="modal-foot"><button class="btn" id="eDone">Fechar</button></div>
@@ -3687,7 +3882,16 @@ function openExportModal(){
   $('#ePdf',overlay).onclick = ()=>{ overlay.remove(); exportReportPdf(); };
   $('#eCsv',overlay).onclick = ()=>{ downloadFile('demandas_comunicacoes.csv', ds.exportCSV(), 'text/csv;charset=utf-8'); toast('Exportação CSV gerada.'); };
   $('#eJson',overlay).onclick = ()=>{ downloadFile('backup_demandas_comunicacoes.json', ds.exportJSON(), 'application/json'); toast('Backup JSON gerado.'); };
-  $('#eImport',overlay).onchange = async (e)=>{
+  const eClearLocal = $('#eClearLocal',overlay);
+  if(eClearLocal) eClearLocal.onclick = ()=>{
+    overlay.remove();
+    openConfirm('Limpar dados locais', 'Isso apaga os dados de demonstração salvos <b>neste navegador</b> (usados apenas para testar o arquivo HTML sem o backend do Apps Script) e recarrega a página com a base de exemplo original e a data/hora atual. A base compartilhada publicada via Apps Script não é afetada. Deseja continuar?', ()=>{
+      Object.values(STORAGE_KEYS).forEach(k=> localStorage.removeItem(k));
+      location.reload();
+    }, 'Limpar');
+  };
+  const eImport = $('#eImport',overlay);
+  if(eImport) eImport.onchange = async (e)=>{
     const file = e.target.files[0]; if(!file) return;
     const text = await file.text();
     try{ await ds.importJSON(text); toast('Backup restaurado com sucesso.'); overlay.remove(); renderView(); }
