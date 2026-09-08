@@ -264,6 +264,21 @@ select:focus, input:focus, textarea:focus{border-color:var(--red);}
 
 /* Visão Geral: painel de resumo executivo (texto solto, tipografia confortável) */
 .vg-summary-panel{margin-bottom:18px;border-color:var(--gray-300);}
+
+/* Kanban */
+.kanban-board{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px;align-items:flex-start;}
+.kanban-col{flex:0 0 270px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:14px;padding:10px;display:flex;flex-direction:column;max-height:calc(100vh - 300px);}
+.kanban-col-head{display:flex;justify-content:space-between;align-items:center;padding:4px 6px 10px;font-size:12.5px;font-weight:800;letter-spacing:.2px;color:var(--gray-800);}
+.kanban-col-count{background:var(--white);border:1px solid var(--gray-200);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--gray-500);font-weight:700;}
+.kanban-col-body{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;padding:2px;border-radius:10px;transition:background .15s;}
+.kanban-col-body.drag-over{background:var(--red-tint);outline:2px dashed var(--red);}
+.kanban-card{background:var(--white);border:1px solid var(--gray-200);border-radius:10px;padding:10px;cursor:pointer;transition:box-shadow .15s, transform .1s;}
+.kanban-card:hover{box-shadow:0 4px 14px rgba(43,46,49,.08);}
+.kanban-card.dragging{opacity:.4;}
+.kc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.kc-title{font-size:13px;font-weight:700;color:var(--gray-800);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kc-meta{display:flex;justify-content:space-between;font-size:11.5px;color:var(--gray-500);font-weight:600;}
+.kanban-empty{font-size:12px;color:var(--gray-400);text-align:center;padding:18px 6px;}
 .vg-summary-text{margin:0;font-size:14.5px;line-height:1.75;color:var(--gray-800);font-weight:500;max-width:920px;}
 
 /* Attention panel */
@@ -1913,7 +1928,8 @@ const ICONS = {
   click:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 9l11 4-4 2-2 4-5-10z"/></svg>',
   report:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>',
   refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>',
-  download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+  download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  kanban:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1.5"/><rect x="9.5" y="3" width="6" height="11" rx="1.5"/><rect x="16" y="3" width="6" height="14" rx="1.5"/></svg>'
 };
 
 /* -------------------------------- SHELL --------------------------------- */
@@ -1932,6 +1948,7 @@ function renderShell(){
       <nav class="nav">
         <div class="nav-item" data-nav="visaogeral">${ICONS.eye} One Page Report</div>
         <div class="nav-item" data-nav="dashboard">${ICONS.dashboard} Dashboard</div>
+        <div class="nav-item" data-nav="kanban">${ICONS.kanban} Kanban</div>
         <div class="nav-item" data-nav="demandas">${ICONS.list} Demandas</div>
         <div class="nav-item" data-nav="config">${ICONS.gear} Configurações</div>
       </nav>
@@ -1967,6 +1984,7 @@ function navigate(view){
     dashboard:['Dashboard executivo','Visão executiva da carteira de demandas e comunicações'],
     visaogeral:['One Page Report · somente leitura','Panorama executivo para a diretoria — resumo, indicadores-chave, agenda e riscos, sem edição de dados'],
     demandas:['Demandas & Comunicações',state.readOnly?'Consulte e acompanhe os registros da base única (modo somente leitura)':'Consulte, edite e acompanhe todos os registros da base única'],
+    kanban:['Quadro Kanban','Arraste um card entre colunas para mudar o status — a alteração é salva na hora'],
     report:['One Page Report','Status report executivo pronto para encaminhar à diretoria'],
     config:['Configurações','Gerencie as listas de apoio utilizadas pelos formulários e filtros']
   };
@@ -1992,6 +2010,7 @@ function renderView(){
   if(state.view==='dashboard') renderDashboard();
   else if(state.view==='visaogeral') renderVisaoGeral();
   else if(state.view==='demandas') renderDemandasView();
+  else if(state.view==='kanban') renderKanban();
   else if(state.view==='report') renderOnePageReport();
   else if(state.view==='config') renderConfigView();
 }
@@ -3649,6 +3668,81 @@ function renderTableBody(){
   bindDualScroll();
 }
 function badgeStatus(s){ return `<span class="badge" style="background:${STATUS_TINT[s]||'var(--gray-100)'};color:${STATUS_COLOR[s]||'var(--gray-500)'}">${esc(s)}</span>`; }
+
+/* ============================================================================
+   KANBAN — uma coluna por status; arrastar um card entre colunas grava o
+   novo status na hora (reaproveita ds.updateDemanda, que já persiste na base
+   e registra no histórico, igual à edição pelo formulário).
+   ============================================================================ */
+function renderKanban(){
+  const c = $('#content');
+  const filtered = applyFilters(state.demandas);
+  const colunas = (ds.getConfig().status||[]).filter(s=>s.ativo).map(s=>s.nome);
+
+  c.innerHTML = `
+    <div class="filterbar" id="filterbar"></div>
+    ${renderActiveFilterChips()}
+    <div class="kanban-board" id="kanbanBoard"></div>
+  `;
+  const fb = $('#filterbar'); fb.innerHTML = renderFilterBar(); bindFilterBar(fb, renderKanban);
+  bindActiveFilterChips(c);
+
+  const board = $('#kanbanBoard');
+  board.innerHTML = colunas.map(statusNome=>{
+    const itens = filtered.filter(d=>d.status===statusNome);
+    return `
+    <div class="kanban-col" data-status="${esc(statusNome)}">
+      <div class="kanban-col-head">
+        <span class="kanban-col-title">${esc(statusNome)}</span>
+        <span class="kanban-col-count">${itens.length}</span>
+      </div>
+      <div class="kanban-col-body" data-status="${esc(statusNome)}">
+        ${itens.length? itens.map(d=>`
+          <div class="kanban-card" draggable="${!state.readOnly}" data-id="${d.id}">
+            <div class="kc-top">
+              <span class="id-tag">${d.id}</span>
+              ${badgePrio(d.prioridade)}
+            </div>
+            <div class="kc-title" title="${esc(d.titulo)}">${esc(d.titulo)}</div>
+            <div class="kc-meta">
+              <span>${esc(d.responsavel||'—')}</span>
+              <span>${fmtD(d.dataPlanejadaPublicacao)}${d.atrasada?' <span style="color:var(--red);font-weight:800">●</span>':''}</span>
+            </div>
+          </div>`).join('') : `<div class="kanban-empty">Nenhuma demanda aqui</div>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  $$('.kanban-card', board).forEach(card=>{
+    card.addEventListener('click', ()=> openDetailModal(card.dataset.id));
+    if(state.readOnly) return;
+    card.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('text/plain', card.dataset.id);
+      e.dataTransfer.effectAllowed = 'move';
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', ()=> card.classList.remove('dragging'));
+  });
+
+  if(!state.readOnly){
+    $$('.kanban-col-body', board).forEach(colBody=>{
+      colBody.addEventListener('dragover', e=>{ e.preventDefault(); colBody.classList.add('drag-over'); });
+      colBody.addEventListener('dragleave', ()=> colBody.classList.remove('drag-over'));
+      colBody.addEventListener('drop', async e=>{
+        e.preventDefault();
+        colBody.classList.remove('drag-over');
+        const id = e.dataTransfer.getData('text/plain');
+        const novoStatus = colBody.dataset.status;
+        const atual = state.demandas.find(d=>d.id===id);
+        if(!atual || atual.status===novoStatus) return;
+        await ds.updateDemanda(id, {status: novoStatus});
+        toast(`Status de ${id} atualizado para "${novoStatus}".`);
+        renderKanban();
+      });
+    });
+  }
+}
+
 function badgeStatusEd(s){ return `<span class="badge" style="background:${STATUS_ED_TINT[s]||'var(--gray-100)'};color:${STATUS_ED_COLOR[s]||'var(--gray-500)'}">${esc(s)}</span>`; }
 function badgePrio(p){ return `<span class="badge" style="background:${PRIORIDADE_TINT[p]||'var(--gray-100)'};color:${PRIORIDADE_COLOR[p]||'var(--gray-500)'}">${esc(p)}</span>`; }
 function badgeSla(s){ const map={Dentro:['var(--ok-tint)','var(--ok)'],Fora:['var(--red-tint)','var(--red)'],'N/A':['var(--gray-100)','var(--gray-500)']}; const [bg,fg]=map[s]||map['N/A']; return `<span class="badge" style="background:${bg};color:${fg}">${s}</span>`; }
