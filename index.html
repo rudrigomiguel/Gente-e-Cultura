@@ -1519,24 +1519,34 @@ class RemoteApiProvider{
     }catch(e){ console.error('Falha ao ler a base remota:', e); return null; }
   }
   async set(key, val, silencioso){
-    try{
-      const r = await fetch('/api/dados', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ acao:'gravar', chave:key, textoJson: JSON.stringify(val), versaoBase: this.versao, excluidos: EXCLUIDOS, usuario: usuarioAtual() })
-      });
-      if(!r.ok) throw new Error('HTTP ' + r.status);
-      const j = await r.json();
-      if(j.versao !== undefined) this.versao = j.versao;
-      if(j.mesclado && j.valor){
-        const consolidado = JSON.parse(j.valor);
-        if(key === STORAGE_KEYS.demandas && Array.isArray(consolidado)){
-          ds._demandas = consolidado;
-          toast('Base sincronizada: havia alterações de outro responsável.');
+    /* A chamada ao Apps Script por fora do Google é intermitente — funciona
+       na maior parte das vezes, mas ocasionalmente esbarra num redirecionamento
+       que o Google trata mal. Por isso tenta de novo uma vez, automaticamente,
+       antes de desistir e avisar o usuário. */
+    for(let tentativa=1; tentativa<=2; tentativa++){
+      try{
+        const r = await fetch('/api/dados', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ acao:'gravar', chave:key, textoJson: JSON.stringify(val), versaoBase: this.versao, excluidos: EXCLUIDOS, usuario: usuarioAtual() })
+        });
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        if(j.versao !== undefined) this.versao = j.versao;
+        if(j.mesclado && j.valor){
+          const consolidado = JSON.parse(j.valor);
+          if(key === STORAGE_KEYS.demandas && Array.isArray(consolidado)){
+            ds._demandas = consolidado;
+            toast('Base sincronizada: havia alterações de outro responsável.');
+          }
         }
+        return true;
+      }catch(e){
+        console.error(`Falha ao gravar na base remota (tentativa ${tentativa}/2):`, e);
+        if(tentativa===2){ if(!silencioso) toast('Não foi possível salvar. Verifique a conexão.', true); return false; }
+        await new Promise(res=>setTimeout(res, 700));
       }
-      return true;
-    }catch(e){ console.error('Falha ao gravar na base remota:', e); if(!silencioso) toast('Não foi possível salvar. Verifique a conexão.', true); return false; }
+    }
   }
 }
 
