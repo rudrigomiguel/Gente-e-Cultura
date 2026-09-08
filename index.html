@@ -1502,9 +1502,51 @@ class LocalProvider{
   async set(key,val){ try{ localStorage.setItem(key, JSON.stringify(val)); return true; }catch(e){ return false; } }
 }
 
+/* RemoteApiProvider — usado quando o painel está hospedado fora do Google
+   (ex.: Vercel), mas ainda precisa ler/gravar na mesma planilha-base do
+   Apps Script. Fala com a função-ponte "/api/dados" do próprio domínio
+   (mesma origem — sem CORS), que por sua vez encaminha para o Apps Script
+   no servidor, longe do navegador. */
+class RemoteApiProvider{
+  constructor(){ this.versao = 0; }
+  async get(key){
+    try{
+      const r = await fetch('/api/dados?acao=ler&chave=' + encodeURIComponent(key));
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if(j.versao !== undefined) this.versao = j.versao;
+      return j.valor ? JSON.parse(j.valor) : null;
+    }catch(e){ console.error('Falha ao ler a base remota:', e); return null; }
+  }
+  async set(key, val, silencioso){
+    try{
+      const r = await fetch('/api/dados', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ acao:'gravar', chave:key, textoJson: JSON.stringify(val), versaoBase: this.versao, excluidos: EXCLUIDOS, usuario: usuarioAtual() })
+      });
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if(j.versao !== undefined) this.versao = j.versao;
+      if(j.mesclado && j.valor){
+        const consolidado = JSON.parse(j.valor);
+        if(key === STORAGE_KEYS.demandas && Array.isArray(consolidado)){
+          ds._demandas = consolidado;
+          toast('Base sincronizada: havia alterações de outro responsável.');
+        }
+      }
+      return true;
+    }catch(e){ console.error('Falha ao gravar na base remota:', e); if(!silencioso) toast('Não foi possível salvar. Verifique a conexão.', true); return false; }
+  }
+}
+
 function escolherProvider(){
   if(MODO_GOOGLE) return new GoogleBackendProvider();
   if(typeof window.storage !== 'undefined' && window.storage) return new RemoteKVProvider();
+  /* Servido por http(s) num domínio próprio (ex.: Vercel) mas fora do Google
+     e fora do preview do Claude: usa a ponte "/api/dados". Um arquivo aberto
+     direto do disco (file://) continua caindo no LocalProvider, como antes. */
+  if(location.protocol !== 'file:') return new RemoteApiProvider();
   return new LocalProvider();
 }
 
