@@ -1474,7 +1474,7 @@ class GoogleBackendProvider{
     if(r.versao !== undefined) this.versao = r.versao;
     return r.valor ? JSON.parse(r.valor) : null;
   }
-  async set(key, val){
+  async set(key, val, silencioso){
     try{
       const r = await this._chamar('apiGravar', key, JSON.stringify(val), this.versao, EXCLUIDOS, usuarioAtual());
       if(r && r.versao !== undefined) this.versao = r.versao;
@@ -1488,7 +1488,7 @@ class GoogleBackendProvider{
         }
       }
       return true;
-    }catch(e){ console.error('Falha ao gravar no Google:', e); toast('Não foi possível salvar. Verifique a conexão.', true); return false; }
+    }catch(e){ console.error('Falha ao gravar no Google:', e); if(!silencioso) toast('Não foi possível salvar. Verifique a conexão.', true); return false; }
   }
 }
 
@@ -1502,51 +1502,9 @@ class LocalProvider{
   async set(key,val){ try{ localStorage.setItem(key, JSON.stringify(val)); return true; }catch(e){ return false; } }
 }
 
-/* RemoteApiProvider — usado quando o painel está hospedado fora do Google
-   (ex.: Vercel), mas ainda precisa ler/gravar na mesma planilha-base do
-   Apps Script. Fala com a função-ponte "/api/dados" do próprio domínio
-   (mesma origem — sem CORS), que por sua vez encaminha para o Apps Script
-   no servidor, longe do navegador. */
-class RemoteApiProvider{
-  constructor(){ this.versao = 0; }
-  async get(key){
-    try{
-      const r = await fetch('/api/dados?acao=ler&chave=' + encodeURIComponent(key));
-      if(!r.ok) throw new Error('HTTP ' + r.status);
-      const j = await r.json();
-      if(j.versao !== undefined) this.versao = j.versao;
-      return j.valor ? JSON.parse(j.valor) : null;
-    }catch(e){ console.error('Falha ao ler a base remota:', e); return null; }
-  }
-  async set(key, val){
-    try{
-      const r = await fetch('/api/dados', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ acao:'gravar', chave:key, textoJson: JSON.stringify(val), versaoBase: this.versao, excluidos: EXCLUIDOS, usuario: usuarioAtual() })
-      });
-      if(!r.ok) throw new Error('HTTP ' + r.status);
-      const j = await r.json();
-      if(j.versao !== undefined) this.versao = j.versao;
-      if(j.mesclado && j.valor){
-        const consolidado = JSON.parse(j.valor);
-        if(key === STORAGE_KEYS.demandas && Array.isArray(consolidado)){
-          ds._demandas = consolidado;
-          toast('Base sincronizada: havia alterações de outro responsável.');
-        }
-      }
-      return true;
-    }catch(e){ console.error('Falha ao gravar na base remota:', e); toast('Não foi possível salvar. Verifique a conexão.', true); return false; }
-  }
-}
-
 function escolherProvider(){
   if(MODO_GOOGLE) return new GoogleBackendProvider();
   if(typeof window.storage !== 'undefined' && window.storage) return new RemoteKVProvider();
-  /* Servido por http(s) num domínio próprio (ex.: Vercel) mas fora do Google
-     e fora do preview do Claude: usa a ponte "/api/dados". Um arquivo aberto
-     direto do disco (file://) continua caindo no LocalProvider, como antes. */
-  if(location.protocol !== 'file:') return new RemoteApiProvider();
   return new LocalProvider();
 }
 
@@ -1607,8 +1565,12 @@ class DataService{
 
   async _persistDemandas(){ await this._touchMeta(); return this.provider.set(STORAGE_KEYS.demandas, this._demandas); }
   async _persistConfig(){ await this._touchMeta(); return this.provider.set(STORAGE_KEYS.config, this._config); }
-  async _persistAudit(){ return this.provider.set(STORAGE_KEYS.audit, this._audit); }
-  async _touchMeta(){ this._meta.lastUpdate = new Date().toISOString(); await this.provider.set(STORAGE_KEYS.meta, this._meta); }
+  /* Metadados ("última atualização") e auditoria (histórico de alterações) são
+     gravações de apoio — se uma delas falhar isoladamente, a demanda em si já
+     foi salva e não há perda de dado; por isso não interrompem o usuário com
+     um toast de erro (silencioso=true). */
+  async _persistAudit(){ return this.provider.set(STORAGE_KEYS.audit, this._audit, true); }
+  async _touchMeta(){ this._meta.lastUpdate = new Date().toISOString(); await this.provider.set(STORAGE_KEYS.meta, this._meta, true); }
 
   _logHistory(id, texto){ if(!this._audit[id]) this._audit[id]=[]; this._audit[id].unshift({ts:new Date().toISOString(), texto, por: usuarioAtual()||'Não identificado'}); this._persistAudit(); }
 
