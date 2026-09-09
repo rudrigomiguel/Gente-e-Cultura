@@ -1300,10 +1300,6 @@ tbody tr:hover{box-shadow:0 6px 18px -12px rgba(43,46,49,.8);position:relative;z
 .info-ico{position:relative;}
 .info-ico:before{content:'';position:absolute;inset:-6px;border-radius:50%;}
 @media print{ .hover-tip{display:none !important;} }
-
-
-.sidebar-foot .sf-user{display:block;margin-top:6px;font-size:10.5px;color:var(--gray-300);}
-.sidebar-foot .sf-user a{color:#FF9A9A;text-decoration:underline;font-weight:700;}
 </style>
 </head>
 <body>
@@ -1505,16 +1501,41 @@ class GoogleBackendProvider{
       return true;
     }catch(e){ console.error('Falha ao gravar no Google:', e); if(!silencioso) toast('Não foi possível salvar. Verifique a conexão.', true); return false; }
   }
+  /* Grava vários itens numa única chamada ao Apps Script — usado para
+     consolidar demanda + metadados + histórico (ou config + metadados) em
+     uma só viagem, em vez de uma chamada por chave. */
+  async setLote(itens){
+    try{
+      const r = await this._chamar('apiGravarLote', itens.map(it=>({
+        chave: it.chave, textoJson: JSON.stringify(it.valor),
+        excluidos: it.chave===STORAGE_KEYS.demandas ? EXCLUIDOS : []
+      })), this.versao, usuarioAtual());
+      if(r && r.versao !== undefined) this.versao = r.versao;
+      (r && r.resultados || []).forEach(res=>{
+        if(res.mesclado && res.valor && res.chave===STORAGE_KEYS.demandas){
+          const consolidado = JSON.parse(res.valor);
+          if(Array.isArray(consolidado)){ ds._demandas = consolidado; toast('Base sincronizada: havia alterações de outro responsável.'); }
+        }
+      });
+      return true;
+    }catch(e){
+      console.error('Falha ao gravar lote no Google:', e);
+      if(itens.some(it=>!it.silencioso)) toast('Não foi possível salvar. Verifique a conexão.', true);
+      return false;
+    }
+  }
 }
 
 class RemoteKVProvider{
   async get(key){ try{ const r = await window.storage.get(key, true); return r ? JSON.parse(r.value) : null; }catch(e){ return null; } }
   async set(key,val){ try{ await window.storage.set(key, JSON.stringify(val), true); return true; }catch(e){ console.error('storage set falhou', e); return false; } }
+  async setLote(itens){ for(const it of itens){ await this.set(it.chave, it.valor); } return true; }
 }
 
 class LocalProvider{
   async get(key){ try{ const v = localStorage.getItem(key); return v? JSON.parse(v): null; }catch(e){ return null; } }
   async set(key,val){ try{ localStorage.setItem(key, JSON.stringify(val)); return true; }catch(e){ return false; } }
+  async setLote(itens){ for(const it of itens){ await this.set(it.chave, it.valor); } return true; }
 }
 
 /* RemoteApiProvider — usado quando o painel está hospedado fora do Google
@@ -1525,13 +1546,19 @@ class LocalProvider{
 class RemoteApiProvider{
   constructor(){ this.versao = 0; }
   async get(key){
-    try{
-      const r = await fetch('/api/dados?acao=ler&chave=' + encodeURIComponent(key), { cache: 'no-store' });
-      if(!r.ok) throw new Error('HTTP ' + r.status);
-      const j = await r.json();
-      if(j.versao !== undefined) this.versao = j.versao;
-      return j.valor ? JSON.parse(j.valor) : null;
-    }catch(e){ console.error('Falha ao ler a base remota:', e); return null; }
+    for(let tentativa=1; tentativa<=2; tentativa++){
+      try{
+        const r = await fetch('/api/dados?acao=ler&chave=' + encodeURIComponent(key), { cache: 'no-store' });
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        if(j.versao !== undefined) this.versao = j.versao;
+        return j.valor ? JSON.parse(j.valor) : null;
+      }catch(e){
+        console.error(`Falha ao ler a base remota (tentativa ${tentativa}/2):`, e);
+        if(tentativa===2) return null;
+        await new Promise(res=>setTimeout(res, 500));
+      }
+    }
   }
   async set(key, val, silencioso){
     /* A chamada ao Apps Script por fora do Google é intermitente — funciona
@@ -1563,6 +1590,48 @@ class RemoteApiProvider{
       }
     }
   }
+  /* Grava vários itens numa única chamada à ponte do Vercel — consolida
+     demanda + metadados + histórico (ou config + metadados) em uma só
+     viagem de rede, em vez de uma chamada por chave. Reduz o tempo de
+     salvar e, de bônus, reduz à metade (ou a um terço) a exposição à
+     mesma intermitência que a leitura/gravação única já tenta contornar
+     com a retentativa acima. */
+  async setLote(itens){
+    for(let tentativa=1; tentativa<=2; tentativa++){
+      try{
+        const r = await fetch('/api/dados', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            acao:'gravarLote',
+            itens: itens.map(it=>({
+              chave: it.chave, textoJson: JSON.stringify(it.valor),
+              excluidos: it.chave===STORAGE_KEYS.demandas ? EXCLUIDOS : []
+            })),
+            versaoBase: this.versao,
+            usuario: usuarioAtual()
+          })
+        });
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        if(j.versao !== undefined) this.versao = j.versao;
+        (j.resultados || []).forEach(res=>{
+          if(res.mesclado && res.valor && res.chave===STORAGE_KEYS.demandas){
+            const consolidado = JSON.parse(res.valor);
+            if(Array.isArray(consolidado)){ ds._demandas = consolidado; toast('Base sincronizada: havia alterações de outro responsável.'); }
+          }
+        });
+        return true;
+      }catch(e){
+        console.error(`Falha ao gravar lote na base remota (tentativa ${tentativa}/2):`, e);
+        if(tentativa===2){
+          if(itens.some(it=>!it.silencioso)) toast('Não foi possível salvar. Verifique a conexão.', true);
+          return false;
+        }
+        await new Promise(res=>setTimeout(res, 700));
+      }
+    }
+  }
 }
 
 function escolherProvider(){
@@ -1579,15 +1648,27 @@ class DataService{
   constructor(provider){ this.provider = provider; this._demandas=null; this._config=null; this._audit=null; }
 
   async init(){
-    let d = await this.provider.get(STORAGE_KEYS.demandas);
+    /* As quatro leituras abaixo são independentes entre si — buscar em
+       paralelo (em vez de uma depois da outra) reduz o tempo de abertura do
+       painel para o tempo da mais lenta das quatro, não a soma de todas. */
+    const [dLido, cLido, aLido, metaLido] = await Promise.all([
+      this.provider.get(STORAGE_KEYS.demandas),
+      this.provider.get(STORAGE_KEYS.config),
+      this.provider.get(STORAGE_KEYS.audit),
+      this.provider.get(STORAGE_KEYS.meta)
+    ]);
+
+    let d = dLido;
     if(!d || !Array.isArray(d) || d.length===0){ d = JSON.parse(JSON.stringify(SEED_DEMANDAS)); await this.provider.set(STORAGE_KEYS.demandas, d); }
     this._demandas = d;
-    let c = await this.provider.get(STORAGE_KEYS.config);
+
+    let c = cLido;
     if(!c){ c = JSON.parse(JSON.stringify(DEFAULT_CONFIG)); await this.provider.set(STORAGE_KEYS.config, c); }
     this._config = c;
-    let a = await this.provider.get(STORAGE_KEYS.audit);
-    this._audit = a || {};
-    let meta = await this.provider.get(STORAGE_KEYS.meta);
+
+    this._audit = aLido || {};
+
+    let meta = metaLido;
     if(!meta){ meta = {lastUpdate:new Date().toISOString()}; await this.provider.set(STORAGE_KEYS.meta, meta); }
     this._meta = meta;
 
@@ -1630,24 +1711,40 @@ class DataService{
     return 'DEM-'+String(max+1).padStart(3,'0');
   }
 
-  async _persistDemandas(){ await this._touchMeta(); return this.provider.set(STORAGE_KEYS.demandas, this._demandas); }
-  async _persistConfig(){ await this._touchMeta(); return this.provider.set(STORAGE_KEYS.config, this._config); }
-  /* Metadados ("última atualização") e auditoria (histórico de alterações) são
-     gravações de apoio — se uma delas falhar isoladamente, a demanda em si já
-     foi salva e não há perda de dado; por isso não interrompem o usuário com
-     um toast de erro (silencioso=true). */
-  async _persistAudit(){ return this.provider.set(STORAGE_KEYS.audit, this._audit, true); }
-  async _touchMeta(){ this._meta.lastUpdate = new Date().toISOString(); await this.provider.set(STORAGE_KEYS.meta, this._meta, true); }
+  /* Grava demandas + metadados ("última atualização") + histórico de
+     auditoria numa ÚNICA chamada de rede — em vez de três chamadas em
+     sequência, como antes. Só a gravação das demandas é crítica (mostra
+     erro se falhar); metadados e auditoria são de apoio (silenciosas). */
+  async _persistDemandas(){
+    this._meta.lastUpdate = new Date().toISOString();
+    return this.provider.setLote([
+      { chave: STORAGE_KEYS.meta,     valor: this._meta,     silencioso: true },
+      { chave: STORAGE_KEYS.audit,    valor: this._audit,     silencioso: true },
+      { chave: STORAGE_KEYS.demandas, valor: this._demandas,  silencioso: false }
+    ]);
+  }
+  /* Mesma ideia, para a tela de Configurações: config + metadados numa
+     chamada só. */
+  async _persistConfig(){
+    this._meta.lastUpdate = new Date().toISOString();
+    return this.provider.setLote([
+      { chave: STORAGE_KEYS.meta,   valor: this._meta,   silencioso: true },
+      { chave: STORAGE_KEYS.config, valor: this._config, silencioso: false }
+    ]);
+  }
 
-  _logHistory(id, texto){ if(!this._audit[id]) this._audit[id]=[]; this._audit[id].unshift({ts:new Date().toISOString(), texto, por: usuarioAtual()||'Não identificado'}); this._persistAudit(); }
+  /* Só acrescenta a entrada na memória — quem chama decide quando persistir
+     (normalmente junto com a própria demanda, na mesma gravação em lote,
+     para a entrada de histórico não ficar "perdida" até a próxima gravação). */
+  _logHistory(id, texto){ if(!this._audit[id]) this._audit[id]=[]; this._audit[id].unshift({ts:new Date().toISOString(), texto, por: usuarioAtual()||'Não identificado'}); }
 
   async createDemanda(payload){
     const id = this.nextId();
     const nowISO = toISO(new Date());
     const rec = Object.assign({ id, ultimaAtualizacao: nowISO, criadoEm: nowISO, criadoPor: usuarioAtual()||'Não identificado', alteradoPor: usuarioAtual()||'Não identificado' }, payload);
     this._demandas.push(rec);
-    await this._persistDemandas();
     this._logHistory(id, `Demanda criada com status "${rec.status}" (editorial: "${rec.statusEditorial}").`);
+    await this._persistDemandas();
     return rec;
   }
 
@@ -1659,9 +1756,9 @@ class DataService{
     Object.keys(payload).forEach(k=>{ if(String(before[k]??'') !== String(payload[k]??'')) changes.push({campo:k, de:before[k], para:payload[k]}); });
     const updated = Object.assign({}, before, payload, {ultimaAtualizacao: toISO(new Date()), alteradoPor: usuarioAtual()||'Não identificado'});
     this._demandas[idx] = updated;
-    await this._persistDemandas();
     changes.forEach(c=>{ const label = FIELD_LABELS[c.campo] || c.campo; this._logHistory(id, `${label} alterado de "${fmtVal(c.campo,c.de)}" para "${fmtVal(c.campo,c.para)}".`); });
     if(changes.length===0) this._logHistory(id, 'Registro salvo sem alterações de campo.');
+    await this._persistDemandas();
     return updated;
   }
 
@@ -1676,8 +1773,8 @@ class DataService{
       alcance:0, visualizacoes:0, curtidas:0, comentarios:0, cliques:0, compartilhamentos:0, acoesConversoes:0, resultadoLeitura:''
     });
     this._demandas.push(clone);
-    await this._persistDemandas();
     this._logHistory(clone.id, `Registro duplicado a partir de ${id}.`);
+    await this._persistDemandas();
     return clone;
   }
 
