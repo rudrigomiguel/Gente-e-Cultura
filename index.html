@@ -1871,6 +1871,13 @@ function enrichList(rawList, config, refDate){
 }
 
 /* ------------------------------- ESTADO ------------------------------- */
+/* Momento (no navegador de quem está usando) da última vez que os dados
+   foram sincronizados com o servidor — mostrado no chip "Atualizado em".
+   É diferente de ds._meta.lastUpdate (que é "quando alguém editou algo por
+   último"): esse aqui reflete "há quanto tempo esta tela foi conferida",
+   que é o que faz sentido atualizar sozinho e a cada clique em Atualizar. */
+let ultimaSincronizacao = null;
+
 const state = {
   view:'dashboard',
   readOnly:false,
@@ -1885,9 +1892,24 @@ let ds;
 async function boot(){
   ds = new DataService(escolherProvider());
   await ds.init();
+  ultimaSincronizacao = new Date();
   recomputeDerived();
   renderShell();
   navigate('dashboard');
+  agendarAtualizacaoAutomatica();
+}
+
+/* Atualiza a base sozinha de tempos em tempos, sem precisar clicar em
+   "Atualizar" — pula a vez se a aba estiver em segundo plano (evita
+   chamadas desnecessárias) ou se houver algum formulário/modal aberto no
+   momento (pra não arriscar perder o que a pessoa estiver digitando). */
+function agendarAtualizacaoAutomatica(){
+  const INTERVALO_MS = 3 * 60 * 1000; // 3 minutos
+  setInterval(()=>{
+    if(document.visibilityState !== 'visible') return;
+    if(document.querySelector('.overlay')) return;
+    refreshData();
+  }, INTERVALO_MS);
 }
 
 /* Atualiza os dados a partir do armazenamento compartilhado (útil quando
@@ -1897,6 +1919,7 @@ async function refreshData(){
   if(btn){ btn.disabled = true; btn.classList.add('spinning'); }
   try{
     await ds.init();
+    ultimaSincronizacao = new Date();
     recomputeDerived();
     renderView();
     toast('Dados atualizados com sucesso.');
@@ -2094,9 +2117,7 @@ function navigate(view){
 
 function refreshTopStats(){
   $('#sfCount').textContent = state.demandas.length;
-  const meta = ds._meta;
-  const d = new Date(meta.lastUpdate);
-  const str = d.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+  const str = (ultimaSincronizacao||new Date()).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
   $('#sfTime').textContent = str;
   $('#lastUpdateChip').textContent = 'Atualizado em ' + str;
 }
