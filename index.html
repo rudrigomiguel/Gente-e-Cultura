@@ -3797,15 +3797,17 @@ function renderKanban(){
   const board = $('#kanbanBoard');
   board.innerHTML = colunas.map(statusNome=>{
     const itens = filtered.filter(d=>d.status===statusNome);
+    const cor = STATUS_COLOR[statusNome] || 'var(--gray-500)';
+    const tint = STATUS_TINT[statusNome] || 'var(--gray-100)';
     return `
-    <div class="kanban-col" data-status="${esc(statusNome)}">
+    <div class="kanban-col" data-status="${esc(statusNome)}" style="border-top:3px solid ${cor}">
       <div class="kanban-col-head">
-        <span class="kanban-col-title">${esc(statusNome)}</span>
-        <span class="kanban-col-count">${itens.length}</span>
+        <span class="kanban-col-title" style="color:${cor}">${esc(statusNome)}</span>
+        <span class="kanban-col-count" style="background:${tint};color:${cor};border-color:transparent">${itens.length}</span>
       </div>
       <div class="kanban-col-body" data-status="${esc(statusNome)}">
         ${itens.length? itens.map(d=>`
-          <div class="kanban-card" draggable="${!state.readOnly}" data-id="${d.id}">
+          <div class="kanban-card" draggable="${!state.readOnly}" data-id="${d.id}" style="border-left:3px solid ${cor}">
             <div class="kc-top">
               <span class="id-tag">${d.id}</span>
               ${badgePrio(d.prioridade)}
