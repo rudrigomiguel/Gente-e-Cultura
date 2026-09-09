@@ -3276,8 +3276,18 @@ function exportReportPdf(){
   const voltarPara = state.view;
   if(state.view!=='report'){ navigate('report'); }
   setTimeout(()=>{
+    if(voltarPara!=='report'){
+      /* Só volta para a tela anterior depois que a caixa de impressão for
+         de fato encerrada (salva ou cancelada) — o evento "afterprint" é o
+         jeito confiável de saber isso, ao contrário de assumir que
+         window.print() bloqueia a execução até lá (não bloqueia em todos os
+         navegadores). Trocar o conteúdo da tela antes disso corrompia o PDF
+         gerado, já que a captura de impressão acontecia em cima de um DOM
+         que mudou no meio do caminho. */
+      const aoFecharImpressao = ()=>{ navigate(voltarPara); window.removeEventListener('afterprint', aoFecharImpressao); };
+      window.addEventListener('afterprint', aoFecharImpressao);
+    }
     window.print();
-    if(voltarPara!=='report') navigate(voltarPara);
   }, 150);
 }
 function renderOnePageReport(){
