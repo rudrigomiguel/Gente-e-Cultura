@@ -823,6 +823,14 @@ body{
 .kpi-hero-legend .it{justify-content:space-between;padding:6px 11px;min-width:0;}
 .kpi-hero-legend .it .nm{display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .kpi-hero-legend .it-wide{grid-column:1 / -1;}
+/* Radar editável */
+.radar-cell{position:relative;height:46px;}
+.radar-cell .radar-add{position:absolute;right:4px;bottom:4px;width:20px;height:20px;border-radius:50%;border:1px solid var(--gray-300);background:#fff;color:var(--red);font-weight:800;font-size:14px;line-height:1;cursor:pointer;opacity:0;transition:opacity .15s;padding:0;}
+.radar-cell:hover .radar-add, .radar-cell .radar-add:focus{opacity:1;}
+@media (hover:none){ .radar-cell .radar-add{opacity:.55;} }
+.radar-cell.drop-over{background:var(--red-tint,#FBEAEA);outline:2px dashed var(--red);outline-offset:-3px;}
+.radar-chip[draggable="true"]{cursor:grab;} .radar-chip.dragging{opacity:.4;}
+@media print{ .radar-add{display:none !important;} }
 /* só em telas largas (4+ colunas): em telas menores o span criaria uma coluna extra */
 @media (min-width:1201px){ .kpi-grid-hero > .kpi-card.kpi-last-wide{grid-column:span 2;} }
 
@@ -2730,7 +2738,7 @@ function renderVisaoGeral(){
     <div class="section-divider"><span class="lbl">Agenda &amp; Carga de Trabalho</span><span class="line"></span></div>
     <div class="grid-2">
       <div class="panel">
-        <div class="panel-head"><div><div class="panel-title">CARGA POR SOLICITANTE</div><div class="panel-sub">Chamados por solicitante e status — clique para abrir a lista</div></div>${infoIcon('Todos os chamados da planilha agrupados pela coluna SOLICITANTE, divididos pelos status que constam na planilha. A planilha não tem coluna de responsável.')}</div>
+        <div class="panel-head"><div><div class="panel-title">ÁREA DEMANDANTE</div><div class="panel-sub">Chamados por área demandante e status — clique para abrir a lista</div></div>${infoIcon('Todos os chamados da planilha agrupados pela coluna ÁREA SOLICITANTE, divididos pelos status que constam na planilha.')}</div>
         <div id="respChart"></div>
       </div>
       <div class="panel">
@@ -2862,7 +2870,7 @@ function renderDashboard(){
     <div class="section-divider"><span class="lbl">Carga &amp; Volume</span><span class="line"></span></div>
     <div class="grid-2">
       <div class="panel">
-        <div class="panel-head"><div><div class="panel-title">CARGA POR SOLICITANTE</div><div class="panel-sub">Chamados por solicitante e status — clique para abrir a lista</div></div>${infoIcon('Todos os chamados da planilha agrupados pela coluna SOLICITANTE, divididos pelos status que constam na planilha. A planilha não tem coluna de responsável.')}</div>
+        <div class="panel-head"><div><div class="panel-title">ÁREA DEMANDANTE</div><div class="panel-sub">Chamados por área demandante e status — clique para abrir a lista</div></div>${infoIcon('Todos os chamados da planilha agrupados pela coluna ÁREA SOLICITANTE, divididos pelos status que constam na planilha.')}</div>
         <div id="respChart"></div>
       </div>
       <div class="panel">
@@ -3033,10 +3041,12 @@ function renderRadarSemana(filtered){
     : `${Math.abs(radarSemanaOffset)} semana${Math.abs(radarSemanaOffset)>1?'s':''} atrás`;
 
   /* Horário real mostrado quando não é "em ponto" (a grade só tem faixas de hora cheia) — assim ninguém lê 13:30 como 11:00. */
+  const addBtn = state.readOnly ? '' : `<button class="radar-add" title="Cadastrar comunicação prevista neste dia e horário" aria-label="Cadastrar comunicação prevista">+</button>`;
   const chip = d => {
     const hora = (d._horaOc && !/^\d{1,2}:00$/.test(d._horaOc) && /\d{1,2}:\d{2}/.test(d._horaOc)) ? d._horaOc.match(/\d{1,2}:\d{2}/)[0] : '';
     const tip = `<b>${esc(d.titulo)}</b><br>${esc(d.projeto||'—')} · ${esc(d.areaSolicitante||'—')}<br>${esc(d.prioridade||'—')}${d._horaOc? ' · '+esc(d._horaOc):''}${d.atrasada?" · <span style='color:var(--red)'>atrasada</span>":''}`;
-    return `<div class="radar-chip" data-id="${d.id}" style="border-left-color:${PRIORIDADE_COLOR[d.prioridade]||'var(--gray-400)'}" data-tip="${tip}">${hora? '<b>'+esc(hora)+'</b> ':''}${esc(d.titulo)}</div>`;
+    const arrastavel = !state.readOnly && !!d._dPlan;
+    return `<div class="radar-chip" data-id="${d.id}" ${arrastavel?'draggable="true"':''} style="border-left-color:${PRIORIDADE_COLOR[d.prioridade]||'var(--gray-400)'}" data-tip="${tip}">${hora? '<b>'+esc(hora)+'</b> ':''}${esc(d.titulo)}</div>`;
   };
 
   el.innerHTML = `
@@ -3052,11 +3062,11 @@ function renderRadarSemana(filtered){
         <tbody>
           ${RADAR_SLOTS.map(h=>`
             <tr><td class="radar-hora">${String(h).padStart(2,'0')}:00</td>
-              ${RADAR_DIAS.map(dia=>`<td>${grid[h][dia].map(chip).join('')}</td>`).join('')}
+              ${RADAR_DIAS.map((dia,i)=>`<td class="radar-cell" data-dia="${toISO(datas[i])}" data-hora="${String(h).padStart(2,'0')}:00">${grid[h][dia].map(chip).join('')}${addBtn}</td>`).join('')}
             </tr>`).join('')}
           ${RADAR_DIAS.some(dia=>semHorario[dia].length) ? `
             <tr class="radar-sem-horario"><td class="radar-hora">Sem horário</td>
-              ${RADAR_DIAS.map(dia=>`<td>${semHorario[dia].map(chip).join('')}</td>`).join('')}
+              ${RADAR_DIAS.map((dia,i)=>`<td class="radar-cell" data-dia="${toISO(datas[i])}" data-hora="">${semHorario[dia].map(chip).join('')}</td>`).join('')}
             </tr>` : ''}
         </tbody>
       </table>
@@ -3069,6 +3079,31 @@ function renderRadarSemana(filtered){
   $('#radarNext').onclick = ()=>{ radarSemanaOffset++; renderRadarSemana(filtered); };
   const btnHoje = $('#radarHoje'); if(btnHoje) btnHoje.onclick = ()=>{ radarSemanaOffset=0; renderRadarSemana(filtered); };
   $$('.radar-chip', el).forEach(chipEl=> chipEl.onclick = ()=> openDetailModal(chipEl.dataset.id));
+
+  /* Edição direta no radar: "+" cadastra uma comunicação prevista naquele dia/horário; arrastar um item reagenda. */
+  const sub_ = el.closest('.panel') && el.closest('.panel').querySelector('.panel-sub');
+  if(sub_) sub_.textContent = state.readOnly
+    ? 'Publicações planejadas por dia e horário — clique num item para abrir o detalhe'
+    : 'Clique num item para abrir · arraste para reagendar · use o + de uma célula para cadastrar uma comunicação prevista';
+  if(!state.readOnly){
+    $$('.radar-chip[draggable="true"]', el).forEach(c=>{
+      c.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', c.dataset.id); e.dataTransfer.effectAllowed='move'; c.classList.add('dragging'); });
+      c.addEventListener('dragend', ()=> c.classList.remove('dragging'));
+    });
+    $$('.radar-cell', el).forEach(td=>{
+      td.addEventListener('dragover', e=>{ e.preventDefault(); td.classList.add('drop-over'); });
+      td.addEventListener('dragleave', ()=> td.classList.remove('drop-over'));
+      td.addEventListener('drop', async e=>{
+        e.preventDefault(); td.classList.remove('drop-over');
+        const id = e.dataTransfer.getData('text/plain'); if(!id) return;
+        await ds.updateDemanda(id, {dataPlanejadaPublicacao: td.dataset.dia, horarioPlanejado: td.dataset.hora, dataPlanejadaTexto: ''});
+        toast(`${id} reagendada para ${fmtD(td.dataset.dia)}${td.dataset.hora? ' às '+td.dataset.hora : ''}.`);
+        renderView();
+      });
+      const add = td.querySelector('.radar-add');
+      if(add) add.onclick = (e)=>{ e.stopPropagation(); openDemandaModal(null, {dataPlanejadaPublicacao: td.dataset.dia, horarioPlanejado: td.dataset.hora}); };
+    });
+  }
 }
 
 /* Cálculo dos cards de "Números Gerais" — extraído para função própria para que
@@ -3299,8 +3334,7 @@ function handleKpiClick(id){
 }
 
 function renderRespChart(filtered){
-  /* A planilha não tem "responsável"; a única coluna de pessoa é SOLICITANTE. O gráfico conta TODOS os chamados
-     por solicitante, empilhados por Status — todos os status que constam na planilha. */
+  /* Conta TODOS os chamados por ÁREA SOLICITANTE (coluna da planilha), empilhados por Status — todos os status que constam na planilha. */
   const el = $('#respChart');
   if(!filtered.length){ el.innerHTML = emptyState('Nenhum chamado para os filtros selecionados.'); return; }
   const lista = activeLists().status;
@@ -3308,7 +3342,7 @@ function renderRespChart(filtered){
   const chaveSt = d => lista.includes(d.status) ? d.status : '';
   const por = {};
   filtered.forEach(d=>{
-    const p = d.solicitante || '(sem solicitante)';
+    const p = d.areaSolicitante || '(sem área)';
     if(!por[p]) por[p] = {total:0, st:{}, it:{}};
     por[p].total++;
     const k = chaveSt(d);
@@ -3334,7 +3368,7 @@ function renderRespChart(filtered){
   $$('.resp-row', el).forEach(r=> r.onclick = ()=>{
     const nome = r.dataset.resp;
     clearFiltersSilent();
-    state._specialFilter = {predicate:d=>(d.solicitante||'(sem solicitante)')===nome};
+    state._specialFilter = {predicate:d=>(d.areaSolicitante||'(sem área)')===nome};
     goToDemandas();
   });
 }
@@ -3789,10 +3823,10 @@ function renderOnePageReport(){
   const tEngC = fAlc? fInter/fAlc : 0;
   const tCliqC = fAlc? fCliq/fAlc : 0;
 
-  /* Carga por solicitante (coluna real da planilha): todos os chamados */
+  /* Área demandante (coluna ÁREA SOLICITANTE da planilha): todos os chamados */
   const respMap = {};
   all.forEach(d=>{
-    const k = d.solicitante || '—';
+    const k = d.areaSolicitante || '—';
     respMap[k] = respMap[k] || {nome:k, ativos:0, atrasadas:0, criticas:0};
     respMap[k].ativos++;
     if(d.atrasada) respMap[k].atrasadas++;
@@ -3846,7 +3880,7 @@ function renderOnePageReport(){
     })}
     <div class="report-toolbar">
       <button class="btn btn-primary" id="btnExportReportPdf">${ICONS.download} Exportar PDF</button>
-      <span class="report-meta">O botão abre a caixa de impressão do navegador — escolha "Salvar como PDF" como destino.</span>
+      <span class="report-meta">O botão abre a caixa de impressão do navegador — escolha o destino "Salvar como PDF" (não "Microsoft Print to PDF") e salve numa pasta local, como Downloads.</span>
     </div>
     <div class="report-page" id="reportPage">
       <div class="report-brandbar">
@@ -3911,11 +3945,11 @@ function renderOnePageReport(){
 
       <div class="report-grid-2">
         <div class="panel report-panel">
-          <div class="panel-head"><div><div class="panel-title">CARGA POR SOLICITANTE</div><div class="panel-sub">Chamados por solicitante</div></div></div>
+          <div class="panel-head"><div><div class="panel-title">ÁREA DEMANDANTE</div><div class="panel-sub">Chamados por área demandante</div></div></div>
           ${cargaResp.length? cargaResp.map(r=>`
             <div class="report-bar-row">
               <span class="rlabel">${esc(r.nome)}</span>
-              <div class="report-bar-track" data-tip="<b>${esc(r.nome)}</b><br>${r.ativos} chamado${r.ativos===1?'':'s'}<br>${r.atrasadas} atrasada${r.atrasadas===1?'':'s'} · ${r.criticas} crítica${r.criticas===1?'':'s'}${listaTitulosHTML(all.filter(x=>(x.solicitante||'—')===r.nome))}"><div class="report-bar-fill" style="width:${(r.ativos/maxCarga*100).toFixed(0)}%;background:${r.atrasadas>0?'#AC0000':'#50555A'}"></div></div>
+              <div class="report-bar-track" data-tip="<b>${esc(r.nome)}</b><br>${r.ativos} chamado${r.ativos===1?'':'s'}<br>${r.atrasadas} atrasada${r.atrasadas===1?'':'s'} · ${r.criticas} crítica${r.criticas===1?'':'s'}${listaTitulosHTML(all.filter(x=>(x.areaSolicitante||'—')===r.nome))}"><div class="report-bar-fill" style="width:${(r.ativos/maxCarga*100).toFixed(0)}%;background:${r.atrasadas>0?'#AC0000':'#50555A'}"></div></div>
               <span class="rval">${r.ativos}${r.atrasadas>0? ` <i class="rwarn">(${r.atrasadas} atr.)</i>`:''}</span>
             </div>`).join('') : emptyState('Sem chamados.')}
         </div>
@@ -4244,13 +4278,13 @@ function confirmDelete(id){
 }
 
 /* ============================ MODAL: NOVA/EDITAR DEMANDA ============================ */
-function openDemandaModal(id){
+function openDemandaModal(id, preset){
   const editing = !!id;
   const rec = editing ? ds.getDemanda(id) : null;
   const lists = activeLists();
   const newId = editing ? id : ds.nextId();
   const todayISO = toISO(new Date());
-  const v = (k,def)=> editing ? (rec[k]??def??'') : (def??'');
+  const v = (k,def)=> editing ? (rec[k]??def??'') : ((preset && preset[k]!==undefined) ? preset[k] : (def??''));
   /* Seleção com opção em branco: campo que a planilha deixa vazio NÃO é preenchido por padrão, e um valor já
      gravado que não esteja na lista continua aparecendo (não é trocado sem querer ao salvar). */
   const sel = (idEl, atual, opcoes)=>{
@@ -4509,7 +4543,7 @@ function openExportModal(){
     <div class="confirm-body">
       <p style="margin-top:0">Exporte a base única completa (demandas + comunicações)${semPdf?'':', gere o PDF da tela em que você está (ou do relatório executivo, se estiver no One Page Report)'} ou restaure um backup salvo anteriormente.</p>
       <div style="display:flex;flex-direction:column;gap:8px">
-        ${semPdf? '' : `<button class="btn" id="ePdf">${ICONS.download} Exportar PDF (desta tela)</button>`}
+        ${semPdf? '' : `<button class="btn" id="ePdf">${ICONS.download} Exportar PDF (desta tela)</button><div style="font-size:11px;color:var(--gray-500);line-height:1.4;margin:-2px 2px 2px">Na caixa de impressão, escolha o destino <b>"Salvar como PDF"</b> (não "Microsoft Print to PDF") e salve numa pasta local, como Downloads.</div>`}
         ${mostrarExcel? `<button class="btn" id="eExcel">${ICONS.download} Exportar Excel (lista de demandas)</button>` : ''}
         <button class="btn" id="eCsv">Exportar CSV</button>
         <button class="btn" id="eJson">Exportar backup JSON (base + configurações)</button>
