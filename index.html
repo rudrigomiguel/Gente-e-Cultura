@@ -551,6 +551,21 @@ textarea{resize:vertical;min-height:56px;font-family:var(--font-display);}
   .filterbar, #filterbar, .radar-toolbar, .active-filters, .row-actions,
   .kanban-card[draggable], .report-toolbar, .vg-toolbar, .config-tabs-actions{display:none !important;}
   .kanban-board{overflow:visible !important;flex-wrap:wrap !important;}
+  .panel, .kpi-card, .insight-item, .attn-row, .radar-table-wrap, .top-item{break-inside:avoid;page-break-inside:avoid;}
+  .section-divider{break-after:avoid;page-break-after:avoid;}
+  /* A página impressa é mais estreita que a tela e ativaria os layouts "mobile": aqui se força a grade de desktop. */
+  body:not(:has(#reportPage)) #content{zoom:.74;position:static !important;padding:6px 0 0 !important;width:auto !important;}
+  body:not(:has(#reportPage)) .topbar{margin-bottom:6px !important;}
+  body:not(:has(#reportPage)) .grid-2{grid-template-columns:1.3fr 1fr !important;}
+  body:not(:has(#reportPage)) .grid-3{grid-template-columns:repeat(3,1fr) !important;}
+  body:not(:has(#reportPage)) .grid-2-even{grid-template-columns:1fr 1fr !important;}
+  body:not(:has(#reportPage)) .metric-grid{grid-template-columns:repeat(4,1fr) !important;}
+  body:not(:has(#reportPage)) .kpi-grid-hero{grid-template-columns:minmax(0,1.5fr) repeat(var(--kpi-cols,3),minmax(0,1fr)) !important;}
+  body:not(:has(#reportPage)) .kpi-card.kpi-hero{grid-column:1 !important;grid-row:1 / span 2 !important;}
+  body:not(:has(#reportPage)) .kpi-grid-uniform{grid-template-columns:repeat(6,1fr) !important;}
+  body:not(:has(#reportPage)) .hb-lockup, body:not(:has(#reportPage)) .hb-watermark{display:block !important;}
+  .radar-table-wrap, .chart-wrap{overflow:visible !important;}
+  canvas{max-width:100% !important;}
   .kanban-col{break-inside:avoid;}
   .table-wrap{overflow:visible !important;box-shadow:none !important;}
   @page{margin:14mm;}
@@ -1164,7 +1179,9 @@ tbody tr:hover{box-shadow:0 6px 18px -12px rgba(43,46,49,.8);position:relative;z
 .report-summary, .report-section-title, .report-kpi-grid, .report-panel,
 .report-grid-2, .report-footer{margin-left:34px;margin-right:34px;}
 
-.report-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:22px;break-inside:avoid;page-break-inside:avoid;}
+.report-kpi-grid{display:grid;grid-template-columns:repeat(var(--rcols,6),1fr);gap:10px;margin-bottom:18px;break-inside:avoid;page-break-inside:avoid;}
+#reportKpis{grid-template-columns:repeat(3,1fr);}
+.report-kpi-grid > .kpi-card.kpi-last-wide{grid-column:span 2;}
 .report-kpi-grid > .kpi-card{flex:none;min-width:0;padding:13px 13px 12px;border-radius:13px;}
 .report-kpi-grid .kpi-value{font-size:21px;margin-top:9px;letter-spacing:-.5px;}
 .report-kpi-grid .kpi-label{font-size:10.5px;line-height:1.3;}
@@ -1225,7 +1242,7 @@ tbody tr:hover{box-shadow:0 6px 18px -12px rgba(43,46,49,.8);position:relative;z
   #reportPage .panel-title:before{background:#AC0000 !important;box-shadow:none !important;}
   #reportPage [data-info-toggle]{display:none !important;}
   /* no papel a largura é ~A4: fixa 5 colunas e compacta o card */
-  .report-kpi-grid{grid-template-columns:repeat(5,1fr) !important;gap:7px !important;margin-bottom:16px !important;break-inside:avoid !important;page-break-inside:avoid !important;}
+  .report-kpi-grid{grid-template-columns:repeat(var(--rcols,6),1fr) !important;gap:7px !important;margin-bottom:16px !important;break-inside:avoid !important;page-break-inside:avoid !important;}
   .report-kpi-grid > .kpi-card{padding:9px 9px 8px !important;border-radius:10px !important;}
   .report-kpi-grid .kpi-value{font-size:16px !important;margin-top:6px !important;}
   .report-kpi-grid .kpi-label{font-size:8px !important;}
@@ -3669,12 +3686,55 @@ function renderAgendaPanel(filtered){
    diagramação de documento; nas demais abas (Dashboard, Kanban, Demandas,
    Configurações), imprime exatamente o que está na tela, sem redirecionar
    para outro lugar. */
+/* Orientação/margem da página de impressão definidas por tela (Dashboard em paisagem; relatório em retrato). */
+function aplicarPaginaImpressao(orientacao, margem){
+  let st = document.getElementById('printPageStyle');
+  if(!st){ st = document.createElement('style'); st.id = 'printPageStyle'; document.head.appendChild(st); }
+  st.textContent = `@page{size:A4 ${orientacao};margin:${margem||'10mm'}}`;
+}
+function limparPaginaImpressao(){ const st = document.getElementById('printPageStyle'); if(st) st.remove(); }
+function redimensionarGraficos(){ Object.values(state.charts||{}).forEach(c=>{ try{ c.resize(); }catch(e){} }); }
+window.addEventListener('beforeprint', redimensionarGraficos);
+window.addEventListener('afterprint', ()=>{ limparPaginaImpressao(); setTimeout(redimensionarGraficos, 100); });
+
+/* Configurações: em vez de imprimir a tela de edição (abas, toggles, botões), imprime a lista COMPLETA dos parâmetros. */
+function imprimirConfiguracoes(){
+  const cfg = state.config || {};
+  const box = (t)=>{
+    const itens = cfg[t.key] || [];
+    const linha = it=>{
+      const extra = [t.hasEmail && it.email ? it.email : '', t.hasSla ? (it.slaDias ? 'SLA: '+it.slaDias+' dias úteis' : 'SLA não definido') : '', t.hasEsforco ? 'esforço padrão: '+it.esforcoPadrao+' pts' : ''].filter(Boolean).join(' · ');
+      return `<li${it.ativo===false?' class="off"':''}><span>${esc(it.nome)}${it.ativo===false?' (inativo)':''}</span>${extra? `<i>${esc(extra)}</i>`:''}</li>`;
+    };
+    return `<div class="pc-box"><h3>${esc(t.label)} <em>${itens.length}</em></h3><ul>${itens.map(linha).join('') || '<li class="off"><span>Nenhum item</span></li>'}</ul></div>`;
+  };
+  const c = $('#content');
+  c.innerHTML = `<style>
+    .pc{padding:4px 2px;font-family:inherit} .pc p{margin:0 0 12px;color:#5C6167;font-size:12px}
+    .pc-grid{columns:2;column-gap:18px} .pc-box{break-inside:avoid;page-break-inside:avoid;border:1px solid #D8DADC;border-radius:10px;padding:10px 12px;margin:0 0 12px;background:#fff}
+    .pc-box h3{margin:0 0 6px;font-size:12px;letter-spacing:.3px;text-transform:uppercase;color:#AC0000;display:flex;justify-content:space-between}
+    .pc-box h3 em{font-style:normal;color:#767B80;font-weight:700}
+    .pc-box ul{list-style:none;margin:0;padding:0} .pc-box li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid #EEF0F1;font-size:11.5px}
+    .pc-box li i{color:#767B80;font-style:normal;font-size:10.5px} .pc-box li.off{color:#9AA0A5}
+  </style>
+  <div class="pc"><p>Parâmetros em uso nos formulários, filtros e gráficos — ${CONFIG_TABS.length} listas.</p><div class="pc-grid">${CONFIG_TABS.map(box).join('')}</div></div>`;
+  aplicarPaginaImpressao('portrait','14mm');
+  const volta = ()=>{ window.removeEventListener('afterprint', volta); if(state.view==='config') renderConfigView(); };
+  window.addEventListener('afterprint', volta);
+  setTimeout(()=> window.print(), 150);
+}
+
+/* Exporta em PDF a aba em que a pessoa está. One Page Report: layout dedicado (retrato). Dashboard: a própria tela,
+   em paisagem. Configurações: lista completa dos parâmetros. */
 function exportCurrentViewPdf(){
   if(state.view==='report' || state.view==='visaogeral'){
+    aplicarPaginaImpressao('portrait','14mm');
     exportReportPdf();
     return;
   }
-  setTimeout(()=> window.print(), 150);
+  if(state.view==='config'){ imprimirConfiguracoes(); return; }
+  aplicarPaginaImpressao('landscape','10mm');
+  setTimeout(()=> window.print(), 200);
 }
 
 /* ============================ ONE PAGE REPORT ============================ */
@@ -3815,22 +3875,6 @@ function renderOnePageReport(){
       <div class="kpi-grid report-kpi-grid" id="reportKpis"></div>
 
       <div class="panel report-panel">
-        <div class="panel-head"><div><div class="panel-title">DECISÕES E DESBLOQUEIOS QUE DEPENDEM DA DIRETORIA</div><div class="panel-sub">Itens parados aguardando validação ou remoção de impedimento</div></div></div>
-        <div class="report-decisions">
-        ${decisoes.length? decisoes.map(d=>`
-          <div class="report-decision">
-            <div class="dtag ${d.temBloqueio?'crit':'warn'}">${esc(d.temBloqueio?'Bloqueada':'Em validação')}</div>
-            <div class="dmain">
-              <div class="dtitle">${esc(d.titulo)}</div>
-              <div class="dmeta">${esc(d.responsavel||'—')} · ${esc(d.areaSolicitante||'—')} · ${esc(d.prioridade||'—')}</div>
-              <div class="dblock">${esc(d.bloqueio && d.bloqueio!=='Sem bloqueios'? d.bloqueio : 'Aguardando validação para seguir')}</div>
-            </div>
-            <div class="ddays">${d.diasEmAberto!==null? d.diasEmAberto+' du':'—'}<i>em aberto</i></div>
-          </div>`).join('') : '<div class="empty-state" style="padding:10px 0">Nenhum item pendente de decisão.</div>'}
-        </div>
-      </div>
-
-      <div class="panel report-panel">
         <div class="panel-head"><div><div class="panel-title">DESEMPENHO DA COMUNICAÇÃO</div><div class="panel-sub">Interações e cliques sobre as visualizações das peças com métricas informadas</div></div></div>
         <div class="report-funnel">
         ${[['Visualizações',fAlc],['Interações',fInter],['Cliques',fCliq]].map(([lbl,n],i)=>{
@@ -3845,8 +3889,23 @@ function renderOnePageReport(){
         <div class="rf-foot">
           <span><b>${pct(tEngC)}</b> engajamento</span>
           <span><b>${pct(tCliqC)}</b> taxa de clique</span>
-          <span><b>${fmtNum(esforcoMes)}</b> pts de esforço entregues no mês</span>
         </div>
+        </div>
+      </div>
+
+      <div class="panel report-panel">
+        <div class="panel-head"><div><div class="panel-title">DECISÕES E DESBLOQUEIOS QUE DEPENDEM DA DIRETORIA</div><div class="panel-sub">Itens parados aguardando validação ou remoção de impedimento</div></div></div>
+        <div class="report-decisions">
+        ${decisoes.length? decisoes.map(d=>`
+          <div class="report-decision">
+            <div class="dtag ${d.temBloqueio?'crit':'warn'}">${esc(d.temBloqueio?'Bloqueada':(d.status||'Sem status').replace(/^[^A-Za-zÀ-ú]+/,''))}</div>
+            <div class="dmain">
+              <div class="dtitle">${esc(d.titulo)}</div>
+              <div class="dmeta">${esc(d.solicitante||'—')} · ${esc(d.areaSolicitante||'—')} · ${esc(d.prioridade||'—')}</div>
+              <div class="dblock">${esc(d.bloqueio && d.bloqueio!=='Sem bloqueios'? d.bloqueio : 'Aguardando para seguir')}</div>
+            </div>
+            <div class="ddays">${d.diasEmAberto!==null? d.diasEmAberto+' du':'—'}<i>em aberto</i></div>
+          </div>`).join('') : '<div class="empty-state" style="padding:10px 0">Nenhum item pendente de decisão.</div>'}
         </div>
       </div>
 
@@ -3865,7 +3924,7 @@ function renderOnePageReport(){
           ${agenda.length? agenda.map(d=>`
             <div class="report-agenda-item">
               <div class="adate">${fmtD(d.dataPlanejadaPublicacao)}</div>
-              <div class="amain"><div class="atitle">${esc(d.titulo)}</div><div class="ameta">${esc(d.canalPrincipal||'—')} · ${esc(d.responsavel||'—')}</div></div>
+              <div class="amain"><div class="atitle">${esc(d.titulo)}</div><div class="ameta">${esc(d.canalPrincipal||'—')} · ${esc(d.solicitante||'—')}</div></div>
               <div class="astatus" data-ed="${esc(d.statusEditorial||'')}">${esc(d.statusEditorial||'—')}</div>
             </div>`).join('') : '<div class="empty-state" style="padding:10px 0">Nenhuma publicação prevista para o período.</div>'}
         </div>
@@ -3880,21 +3939,9 @@ function renderOnePageReport(){
           <div class="panel-head"><div><div class="panel-title">PRINCIPAIS RISCOS &amp; PONTOS DE ATENÇÃO</div><div class="panel-sub">Ordenados por criticidade</div></div></div>
           ${topRiscos.length? topRiscos.map(r=>`
             <div class="report-risk-item">
-              <div><div class="rtitle">${esc(r.d.titulo)}</div><div class="rmeta">${esc(r.d.responsavel)} · ${r.tag}</div></div>
+              <div><div class="rtitle">${esc(r.d.titulo)}</div><div class="rmeta">${esc(r.d.solicitante||'—')} · ${r.tag}</div></div>
               <div class="rdays">${r.dias!==null? (r.dias<0? `${Math.abs(r.dias)}d atraso` : `${r.dias}d`) : '—'}</div>
             </div>`).join('') : '<div class="empty-state" style="padding:14px 0">Nenhum risco relevante identificado.</div>'}
-        </div>
-      </div>
-
-      <div class="panel report-panel">
-        <div class="panel-head"><div><div class="panel-title">MIX DE CONTEÚDO EM ABERTO</div><div class="panel-sub">Distribuição da carteira ativa por frente editorial</div></div></div>
-        <div class="report-mix">
-        ${mixEditoria.length? mixEditoria.map(([e,n])=>`
-          <div class="rmix-item" data-tip="<b>${esc(e)}</b><br>${n} demanda${n===1?'':'s'} em aberto · ${pct(n/ativos.length)} da carteira ativa${listaTitulosHTML(ativos.filter(x=>(x.editoria||'—')===e))}">
-            <div class="rmix-bar"><div style="height:${(n/maxEd*100).toFixed(0)}%"></div></div>
-            <div class="rmix-n">${n}</div>
-            <div class="rmix-l">${esc(e)}</div>
-          </div>`).join('') : emptyState('Sem demandas em aberto.')}
         </div>
       </div>
 
@@ -3913,17 +3960,13 @@ function renderOnePageReport(){
   `;
   /* Indicadores no mesmo componente visual do dashboard */
   const repCards = [
-    {icon:'layers', label:'Demandas Abertas', value:fmtNum(ativos.length), tooltip:'Registros com status diferente de Concluída/Cancelada.'},
-    {icon:'clock', label:'Vencem em 7 dias', value:fmtNum(vence7.length), tone: vence7.length>0?'warn':'', tooltip:'Publicação prevista dentro dos próximos 7 dias úteis.'},
-    {icon:'check', label:'Concluídas no mês', value:fmtNum(concluidasMes.length), tone:'ok', tooltip:'Demandas concluídas desde o primeiro dia do mês corrente.'},
-    {icon:'trend', label:'Lead time médio', value: leadMedioAll!=='—'? leadMedioAll+' du':'—', tooltip:'Dias úteis médios entre solicitação e conclusão.'},
     {icon:'eye2', label:'Visualizações', value:fmtNum(alcanceTotal), tooltip:'Soma das Visualizações informadas na planilha para as comunicações do recorte.'},
-    {icon:'lock', label:'Aguardam decisão', value:fmtNum(decisoes.length), tone: decisoes.length>0?'warn':'', tooltip:'Itens bloqueados ou aguardando aprovação para seguir.'},
-    {icon:'fire', label:'Alertas editoriais', value:fmtNum(comAlerta.length), tone: comAlerta.length>0?'crit':'', tooltip:'Conflito de agenda ou publicação iminente não finalizada.'},
-    {icon:'list', label:'Esforço entregue no mês', value:fmtNum(esforcoMes), tooltip:'Soma dos pontos de esforço das demandas concluídas no mês.'}
+    {icon:'lock', label:'Aguardam decisão', value:fmtNum(decisoes.length), tone: decisoes.length>0?'warn':'', tooltip:'Itens em validação, em homologação ou bloqueados, ainda não publicados.'},
+    {icon:'fire', label:'Alertas editoriais', value:fmtNum(comAlerta.length), tone: comAlerta.length>0?'crit':'', tooltip:'Conflito de agenda ou publicação iminente não finalizada.'}
   ];
   $('#reportKpis').innerHTML = repCards.map((x,i)=>kpiCard(x,i)).join('');
   bindInfoIcons($('#reportKpis'));
+  $('#reportKpis').style.setProperty('--rcols', repCards.length);
 
   const {cardsTop: numGeraisTop, cards: numGeraisCards} = buildKPIsOperacionais(all);
   /* No PDF os cards são todos "planos": a variante de destaque (com barra de
@@ -3935,6 +3978,10 @@ function renderOnePageReport(){
   );
   $('#reportKpiGridGerais').innerHTML = numGeraisFlat.map((c,i)=>kpiCard(c,i)).join('');
   bindInfoIcons($('#reportKpiGridGerais'));
+  /* Números Gerais em exatamente 2 linhas: nº de colunas = metade dos cards; se for ímpar, o último ocupa 2 colunas. */
+  { const g = $('#reportKpiGridGerais'); const n = numGeraisFlat.length;
+    g.style.setProperty('--rcols', Math.max(3, Math.ceil(n/2)));
+    if(n % 2 === 1){ const k = g.querySelectorAll('.kpi-card'); k[k.length-1].classList.add('kpi-last-wide'); } }
 
   $('#btnExportReportPdf').onclick = exportReportPdf;
 }
