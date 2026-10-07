@@ -803,6 +803,13 @@ body{
   box-shadow:var(--sheen), 0 1px 2px rgba(43,46,49,.05);
 }
 .kpi-hero-legend .it i{box-shadow:0 0 0 2px rgba(255,255,255,.85), 0 2px 4px rgba(43,46,49,.3);}
+/* Legenda do card de destaque em grade de 2 colunas: rótulo à esquerda, número à direita; "Atrasadas" ocupa a linha inteira. */
+.kpi-hero-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;}
+.kpi-hero-legend .it{justify-content:space-between;padding:6px 11px;min-width:0;}
+.kpi-hero-legend .it .nm{display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kpi-hero-legend .it-wide{grid-column:1 / -1;}
+/* só em telas largas (4+ colunas): em telas menores o span criaria uma coluna extra */
+@media (min-width:1201px){ .kpi-grid-hero > .kpi-card.kpi-last-wide{grid-column:span 2;} }
 
 /* ---------- Painéis e gráficos ---------- */
 .panel{
@@ -1299,7 +1306,8 @@ tbody tr:hover{box-shadow:0 6px 18px -12px rgba(43,46,49,.8);position:relative;z
 }
 .kpi-grid > .kpi-card{flex:none;min-width:0;}
 /* o card de destaque alinha exatamente com a 1ª coluna da linha de cima (3 colunas) */
-.kpi-grid-hero{grid-template-columns:calc((100% - 28px)/3) repeat(3, 1fr);}
+/* O destaque ocupa 2 linhas; os demais cards se distribuem em exatamente 2 linhas (nº de colunas definido em --kpi-cols). */
+.kpi-grid-hero{grid-template-columns:minmax(0,1.5fr) repeat(var(--kpi-cols,3), minmax(0,1fr));}
 @media (max-width:1200px){ .kpi-grid-hero{grid-template-columns:calc((100% - 28px)/3) 1fr 1fr;} }
 @media (max-width:900px){  .kpi-grid-hero{grid-template-columns:1fr 1fr;} }
 @media (max-width:560px){  .kpi-grid-hero{grid-template-columns:1fr;} }
@@ -2666,9 +2674,9 @@ function renderVisaoGeral(){
       sub: 'Leitura consolidada da carteira de demandas e comunicações — indicadores, agenda e riscos em uma única visão.',
       stats:[
         {v:fmtNum(filtered.length), k:'Na carteira'},
+        {v:fmtNum(filtered.filter(d=>d.status==='🟢 Publicado').length), k:'Concluídas', tone:'ok'},
         {v:fmtNum(_ativos), k:'Em aberto'},
-        {v:fmtNum(_atras), k:'Atrasadas', tone:_atras>0?'crit':'ok'},
-        {v:_pSla!==null? _pSla+'%':'—', k:'Dentro do SLA', tone:_pSla!==null&&_pSla<80?'warn':'ok'}
+        {v:fmtNum(filtered.filter(d=>d.status==='🔴 Cancelado').length), k:'Canceladas'}
       ]
     })}
     <div class="panel vg-summary-panel">
@@ -2782,9 +2790,9 @@ function renderDashboard(){
       sub:`Panorama consolidado de ${_hoje}. Acompanhe volume, prazos e desempenho da esteira em uma única visão.`,
       stats:[
         {v:fmtNum(filtered.length), k:'Na carteira'},
+        {v:fmtNum(filtered.filter(d=>d.status==='🟢 Publicado').length), k:'Concluídas', tone:'ok'},
         {v:fmtNum(_ativos), k:'Em aberto'},
-        {v:fmtNum(_atras), k:'Atrasadas', tone:_atras>0?'crit':'ok'},
-        {v:_pSla!==null? _pSla+'%':'—', k:'Dentro do SLA', tone:_pSla!==null&&_pSla<80?'warn':'ok'}
+        {v:fmtNum(filtered.filter(d=>d.status==='🔴 Cancelado').length), k:'Canceladas'}
       ]
     })}
     <div class="filterbar" id="filterbar"></div>
@@ -3092,15 +3100,14 @@ function buildKPIsOperacionais(filtered){
     ? `<div class="kpi-hero-foot">
         <div class="cap">Composição da carteira em aberto</div>
         <div class="kpi-hero-bar">${heroSegs.map(s=>`<span style="width:${(s.n/heroTot*100).toFixed(1)}%;background:${s.cor}" data-tip="<b>${esc(s.lbl)}</b><br>${s.n} de ${heroTot} demanda${heroTot===1?'':'s'} em aberto · ${pct(s.n/heroTot)}${listaTitulosHTML(s.itens)}"></span>`).join('')}</div>
-        <div class="kpi-hero-legend">${heroSegs.map(s=>`<span class="it" data-tip="<b>${esc(s.lbl)}</b><br>${s.n} de ${heroTot} em aberto · ${pct(s.n/heroTot)}${listaTitulosHTML(s.itens)}"><i style="background:${s.cor}"></i>${esc(s.lbl)} <b>${s.n}</b></span>`).join('')}</div>
+        <div class="kpi-hero-legend">${heroSegs.map(s=>`<span class="it" data-tip="<b>${esc(s.lbl)}</b><br>${s.n} de ${heroTot} em aberto · ${pct(s.n/heroTot)}${listaTitulosHTML(s.itens)}"><span class="nm">${/^[^A-Za-zÀ-ú]/.test(s.lbl)? '' : `<i style="background:${s.cor}"></i>`}${esc(s.lbl)}</span><b>${s.n}</b></span>`).join('')}${atrasadas>0? `<span class="it it-wide" data-tip="<b>Atrasadas</b><br>${atrasadas} das ${heroTot} em aberto com data planejada de publicação vencida (já contadas nos status acima)${listaTitulosHTML(filtered.filter(d=>d.atrasada))}"><span class="nm"><i style="background:var(--red)"></i>Atrasadas</span><b>${atrasadas}</b></span>`:''}</div>
       </div>`
     : `<div class="kpi-hero-foot"><div class="cap">Composição da carteira em aberto</div><div class="kpi-hero-legend"><span class="it">Nenhuma demanda em aberto no recorte atual.</span></div></div>`;
 
   const cards = [
     {icon:'layers', label:'Demandas Abertas', value:ativos.length, tooltip:'Demandas com status diferente de 🟢 Publicado/🔴 Cancelado. A composição abaixo distribui essas demandas pelos estágios em aberto.', id:'ativas', hero:true, share:heroShare, foot:heroFoot},
-    ...activeLists().status.filter(s=>s!=='🟢 Publicado').map(s=>({icon:'list', label:s, value:filtered.filter(d=>d.status===s).length, tooltip:'Chamados com Status = "'+s.replace(/^[^A-Za-zÀ-ú]+/,'')+'" na planilha, considerando os filtros aplicados.', id:'st:'+s})),
+    ...activeLists().status.filter(s=>s!=='🟢 Publicado' && s!=='🟣 Agendado').map(s=>({icon:'list', label:s, value:filtered.filter(d=>d.status===s).length, tooltip:'Chamados com Status = "'+s.replace(/^[^A-Za-zÀ-ú]+/,'')+'" na planilha, considerando os filtros aplicados.', id:'st:'+s})),
     ...(filtered.some(d=>!activeLists().status.includes(d.status)) ? [{icon:'list', label:'Sem status', value:filtered.filter(d=>!activeLists().status.includes(d.status)).length, tooltip:'Chamados em que a coluna STATUS está em branco na planilha.', id:'st:'}] : []),
-    {icon:'alert', label:'Atrasadas', value:atrasadas, tooltip:'Data Planejada de Publicação vencida e status ainda não final.', tone: atrasadas>0?'crit':'', id:'atrasadas'},
     {icon:'clock', label:'Vencem em até 7 dias', value:venceEm7, tooltip:'Dias úteis até a Data Planejada de Publicação entre 0 e 7.', tone: venceEm7>0?'warn':'', id:'vence7'},
     {icon:'lock', label:'Bloqueadas', value:bloqueadas, tooltip:'Demandas com Bloqueio/Dependência preenchido, ainda não finalizadas — a base aprovada não tem um status próprio para isso; é derivado do campo de bloqueio.', tone: bloqueadas>0?'warn':'', id:'bloqueadas'},
     {icon:'fire', label:'Críticas em aberto (P1)', value:criticasAbertas, tooltip:'Prioridade P1 — Crítica ainda não publicada/cancelada.', tone: criticasAbertas>0?'crit':'', id:'criticas'},
@@ -3119,8 +3126,12 @@ function renderKPIsOperacional(filtered){
   bindInfoIcons(gridTop);
   $$('.kpi-card[data-kpi]', gridTop).forEach(el=> el.onclick = (e)=>{ if(e.target.closest('[data-info-toggle]')) return; handleKpiClick(el.dataset.kpi); });
 
+  grid.style.setProperty('--kpi-cols', Math.min(5, Math.max(3, Math.ceil((cards.length-1)/2))));
   grid.innerHTML = cards.map((c,i)=>kpiCard(c,i)).join('');
   bindInfoIcons(grid);
+  /* número ímpar de cards: o último ocupa 2 colunas para a 2ª linha fechar sem buraco */
+  const _lat = $$('.kpi-card:not(.kpi-hero)', grid);
+  if(_lat.length % 2 === 1) _lat[_lat.length-1].classList.add('kpi-last-wide');
   $$('.kpi-card[data-kpi]', grid).forEach(el=> el.onclick = (e)=>{ if(e.target.closest('[data-info-toggle]')) return; handleKpiClick(el.dataset.kpi); });
 }
 
@@ -3903,9 +3914,7 @@ function renderOnePageReport(){
   /* Indicadores no mesmo componente visual do dashboard */
   const repCards = [
     {icon:'layers', label:'Demandas Abertas', value:fmtNum(ativos.length), tooltip:'Registros com status diferente de Concluída/Cancelada.'},
-    {icon:'alert', label:'Atrasadas', value:fmtNum(atrasadas.length), tone: atrasadas.length>0?'crit':'', tooltip:'Data planejada de publicação vencida e demanda ainda em aberto.'},
     {icon:'clock', label:'Vencem em 7 dias', value:fmtNum(vence7.length), tone: vence7.length>0?'warn':'', tooltip:'Publicação prevista dentro dos próximos 7 dias úteis.'},
-    {icon:'target', label:'Dentro do SLA', value: pctSla!==null? pctSla+'%':'—', tone: pctSla!==null&&pctSla<80?'crit':'ok', tooltip:'SLA por prioridade, em dias úteis, sobre toda a carteira.'},
     {icon:'check', label:'Concluídas no mês', value:fmtNum(concluidasMes.length), tone:'ok', tooltip:'Demandas concluídas desde o primeiro dia do mês corrente.'},
     {icon:'trend', label:'Lead time médio', value: leadMedioAll!=='—'? leadMedioAll+' du':'—', tooltip:'Dias úteis médios entre solicitação e conclusão.'},
     {icon:'eye2', label:'Visualizações', value:fmtNum(alcanceTotal), tooltip:'Soma das Visualizações informadas na planilha para as comunicações do recorte.'},
