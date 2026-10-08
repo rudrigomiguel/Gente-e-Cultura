@@ -833,6 +833,77 @@ body{
 .kpi-hero-legend .it{justify-content:space-between;padding:6px 11px;min-width:0;}
 .kpi-hero-legend .it .nm{display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .kpi-hero-legend .it-wide{grid-column:1 / -1;}
+/* ===== Demandas: listas de trabalho, edição direta, lote, grade de resultados e painel lateral ===== */
+.vis-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.vis-chip{border:1px solid var(--gray-200);background:#fff;border-radius:999px;padding:7px 8px 7px 13px;font:700 12px/1 inherit;color:var(--gray-700,#3A3E42);cursor:pointer;display:inline-flex;gap:8px;align-items:center;transition:all .15s}
+.vis-chip b{background:var(--gray-100);border-radius:999px;padding:3px 9px;font-size:11px;font-variant-numeric:tabular-nums}
+.vis-chip:hover{border-color:var(--red);box-shadow:0 2px 10px rgba(172,0,0,.12)}
+.vis-chip.crit b{background:var(--red-tint);color:var(--red)} .vis-chip.warn b{background:var(--warn-tint);color:var(--warn)}
+.vis-chip.on{background:var(--red);border-color:var(--red);color:#fff} .vis-chip.on b{background:rgba(255,255,255,.26);color:#fff}
+.vis-cta{border:0;background:none;color:var(--red);font-weight:800;font-size:12px;cursor:pointer;text-decoration:underline;padding:6px 4px}
+.seg{display:inline-flex;border:1px solid var(--gray-200);border-radius:10px;overflow:hidden;background:#fff;flex-shrink:0}
+.seg button{border:0;background:none;padding:10px 14px;font-weight:700;font-size:12.5px;cursor:pointer;color:var(--gray-600,#5C6167)}
+.seg button.on{background:var(--gray-900,#2B2E31);color:#fff}
+.datatable .id-tag{white-space:nowrap}
+.col-sel{width:34px;text-align:center !important;padding-left:10px !important;padding-right:4px !important}
+.datatable tr.sel td{background:var(--red-tint,#FBEAEA) !important}
+.inl{font:inherit;font-size:12px;border:1px solid transparent;border-radius:8px;padding:5px 8px;background:transparent;min-width:0;color:inherit;cursor:pointer}
+.inl:hover{border-color:var(--gray-300);background:#fff}
+.inl:focus{outline:2px solid var(--red);outline-offset:0;background:#fff}
+.inl-sel{font-weight:700;border-radius:999px;border:0;-webkit-appearance:none;appearance:none;padding:6px 26px 6px 12px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23767B80' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;max-width:190px;text-overflow:ellipsis}
+.inl-date{width:134px} .inl-time{width:96px}
+.inl-raw{display:inline-block;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;font-size:11.5px;background:var(--gray-100);border-radius:8px;padding:5px 9px;cursor:pointer;color:var(--gray-700,#3A3E42)}
+.inl-raw:hover{background:var(--gray-200)}
+.toast .toast-act{margin-left:12px;background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:6px;padding:4px 10px;font-weight:800;font-size:12px;cursor:pointer}
+.toast .toast-act:hover{background:rgba(255,255,255,.3)}
+.bulk-bar{position:sticky;top:8px;z-index:40;display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:#2B2E31;color:#fff;border-radius:14px;padding:11px 16px;margin:0 0 12px;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.bulk-bar[hidden]{display:none !important}
+.bb-n{display:flex;align-items:center;gap:12px;font-size:13px}
+.bb-lnk{border:0;background:none;color:#FFB3B3;font-weight:700;font-size:12px;cursor:pointer;text-decoration:underline;padding:0}
+.bulk-bar label{display:flex;flex-direction:column;gap:3px;font-size:10.5px;letter-spacing:.3px;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:700}
+.bulk-bar select,.bulk-bar input{font-size:12.5px;padding:6px 9px;border-radius:8px;border:0;color:#2B2E31;background:#fff;min-width:130px}
+.bb-del{margin-left:auto;border:1px solid rgba(255,255,255,.35);background:none;color:#fff;border-radius:8px;padding:8px 14px;font-weight:700;font-size:12px;cursor:pointer}
+.bb-del:hover{background:var(--red);border-color:var(--red)}
+.gr-wrap{background:#fff;border:1px solid var(--gray-200);border-radius:16px;padding:18px 20px}
+.gr-head{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap}
+.gr-title{font-weight:800;font-size:15px} .gr-sub{font-size:12px;color:var(--gray-500);max-width:640px;line-height:1.5;margin-top:3px}
+.gr-prog{min-width:240px}.gp-n{font-size:12px;margin-bottom:6px}.gp-s{font-size:11px;color:var(--gray-500);margin-top:5px}
+.gp-bar{height:8px;border-radius:99px;background:var(--gray-100);overflow:hidden}.gp-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),#37A86F);border-radius:99px;transition:width .3s}
+.gr-opt{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray-600,#5C6167);margin:6px 0 12px}
+.gr-scroll{overflow:auto;max-height:68vh;border:1px solid var(--gray-100);border-radius:12px}
+table.grid-res{width:100%;border-collapse:collapse;font-size:12.5px}
+.grid-res th{position:sticky;top:0;background:#F7F8F8;text-align:left;padding:9px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--gray-500);z-index:1}
+.grid-res th.num,.grid-res td.num{text-align:right}
+.grid-res td{padding:4px 8px;border-top:1px solid var(--gray-100)}
+.grid-res .gr-tema{max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.grid-res .gr-dt{white-space:nowrap;color:var(--gray-600,#5C6167)}
+.gr-in{width:104px;text-align:right;padding:7px 9px;border:1px solid var(--gray-200);border-radius:8px;font:inherit;font-size:12.5px;background:#fff}
+.gr-in:focus{outline:2px solid var(--red);border-color:var(--red)} .gr-in.salvando{background:#FFF8DC} .gr-in.erro{border-color:var(--red);background:var(--red-tint)}
+.gr-ok{width:28px;text-align:center}.gr-ok.ok:after{content:'✓';color:var(--ok);font-weight:800}
+.gr-more,.gr-vazio{padding:14px;color:var(--gray-500);font-size:12.5px;text-align:center}
+.drawer-overlay{display:flex !important;justify-content:flex-end;align-items:stretch;padding:0 !important}
+.drawer{width:min(720px,100vw);background:#fff;height:100%;display:flex;flex-direction:column;box-shadow:-20px 0 60px rgba(0,0,0,.28);animation:drawerIn .22s ease-out}
+@keyframes drawerIn{from{transform:translateX(48px);opacity:.3}to{transform:none;opacity:1}}
+.drawer-head{padding:18px 24px 0;border-bottom:1px solid var(--gray-200);flex-shrink:0}
+.dh-top{display:flex;align-items:center;gap:12px}.dh-title{font-weight:800;font-size:17px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dh-badges{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.drawer-tabs{display:flex;gap:2px;margin-top:14px}
+.drawer-tabs button{border:0;background:none;padding:11px 16px;font-weight:700;font-size:13px;color:var(--gray-500);border-bottom:3px solid transparent;cursor:pointer;margin-bottom:-1px}
+.drawer-tabs button:hover{color:var(--gray-800,#2B2E31)} .drawer-tabs button.on{color:var(--red);border-bottom-color:var(--red)}
+.dt-n{font-style:normal;background:var(--gray-100);border-radius:99px;padding:1px 7px;font-size:10.5px;margin-left:4px}
+.drawer-body{flex:1;overflow:auto;padding:20px 24px}
+.dpane{display:none}.dpane.on{display:block}
+.drawer-foot{padding:14px 24px;border-top:1px solid var(--gray-200);display:flex;gap:10px;align-items:center;flex-wrap:wrap;flex-shrink:0;background:#fff}
+details.mais-campos{margin-top:18px;border:1px dashed var(--gray-300);border-radius:12px;padding:12px 16px}
+details.mais-campos summary{cursor:pointer;font-weight:800;font-size:12.5px;color:var(--gray-700,#3A3E42)}
+details.mais-campos[open] summary{margin-bottom:12px}
+.dr-taxas{display:flex;gap:14px;margin-top:16px}.dr-taxas div{flex:1;background:var(--gray-50);border-radius:12px;padding:12px 14px}.dr-taxas b{display:block;font-size:20px}.dr-taxas span{font-size:11px;color:var(--gray-500)}
+.dr-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.dr-meta div{background:var(--gray-50);border-radius:12px;padding:11px 14px;display:flex;flex-direction:column;gap:2px}
+.dr-meta span{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--gray-500);font-weight:700}.dr-meta b{font-size:13.5px}.dr-meta em{font-style:normal;font-size:11.5px;color:var(--gray-500)}
+.btn.danger,.btn-ghost.danger{color:var(--red)}
+@media (max-width:760px){ .drawer{width:100vw} .dr-meta{grid-template-columns:1fr} .bulk-bar{gap:10px} }
+@media print{ .drawer-overlay,.bulk-bar,.vis-chips,.seg{display:none !important} }
 .print-only{display:none;}
 /* ===== PDF do Dashboard: mesmo padrão do One Page Report (cabeçalho com marca, retrato, compacto, sem cortes) ===== */
 @media print{
@@ -2127,6 +2198,36 @@ class DataService{
     return updated;
   }
 
+  /* Aplica várias alterações de uma vez (edição direta, lote, grade de resultados) e grava UMA vez. Em falha, desfaz tudo. */
+  async aplicarPatches(lista){
+    const agora = new Date().toISOString(), quem = usuarioAtual()||'Não identificado';
+    const feitos = [];
+    lista.forEach(({id, patch})=>{
+      const idx = this._demandas.findIndex(d=>d.id===id); if(idx===-1) return;
+      const before = this._demandas[idx];
+      const mudancas = Object.keys(patch).filter(k=> String(before[k]??'') !== String(patch[k]??''));
+      if(!mudancas.length) return;
+      const histAntes = (this._audit[id]||[]).length;
+      this._demandas[idx] = Object.assign({}, before, patch, {ultimaAtualizacao: agora, alteradoPor: quem});
+      mudancas.forEach(k=>{ const label = FIELD_LABELS[k] || k; this._logHistory(id, `${label} alterado de "${fmtVal(k,before[k])}" para "${fmtVal(k,patch[k])}".`); });
+      feitos.push({id, before, histAntes});
+    });
+    if(!feitos.length) return true;
+    const salvo = await this._persistDemandas();
+    if(salvo === false){
+      feitos.forEach(f=>{
+        const i2 = this._demandas.findIndex(d=>d.id===f.id); if(i2 !== -1) this._demandas[i2] = f.before;
+        if(this._audit[f.id]) this._audit[f.id] = this._audit[f.id].slice(this._audit[f.id].length - f.histAntes);
+      });
+      return false;
+    }
+    return true;
+  }
+  async deleteDemandas(ids){
+    ids.forEach(id=>{ if(!EXCLUIDOS.includes(id)) EXCLUIDOS.push(id); });
+    this._demandas = this._demandas.filter(d=>!ids.includes(d.id));
+    return this._persistDemandas();
+  }
   async deleteDemanda(id){ if(!EXCLUIDOS.includes(id)) EXCLUIDOS.push(id); this._demandas = this._demandas.filter(d=>d.id!==id); await this._persistDemandas(); }
 
   async duplicateDemanda(id){
@@ -2296,7 +2397,7 @@ const state = {
   demandas:[],
   config:null,
   filters:{ periodoIni:null, periodoFim:null, responsavel:[], editoria:[], areaSolicitante:[], status:[], prioridade:[], complexidade:[], publicoAlvo:[], canalPrincipal:[], statusEditorial:[], projeto:[] },
-  table:{ search:'', sortKey:'dataSolicitacao', sortDir:'desc', page:1, pageSize:25 },
+  table:{ search:'', sortKey:'dataSolicitacao', sortDir:'desc', page:1, pageSize:25, visao:'todas', modo:'tabela', sel:new Set(), incluirTodasPub:false, _ids:[] },
   charts:{}, topTab:'alcance', _specialFilter:null
 };
 let ds;
@@ -4424,9 +4525,98 @@ const TABLE_CELLS = {
   aging:d=>esc(d.aging),
   alertaEditorial:d=> d.alertaEditorial? `<span class="alert-tag" title="${esc(d.alertaEditorial)}">⚠ Atenção</span>` : '—'
 };
+/* ============================================================================
+   DEMANDAS & COMUNICAÇÕES — atualização ágil pelos analistas
+   1) listas de trabalho prontas (com contagem ao vivo)   2) edição direta na tabela (com "Desfazer")
+   3) ações em lote com seleção múltipla                   4) modo "Atualizar resultados" (grade de métricas)
+   5) painel lateral com abas no lugar do formulário gigante (openDemandaModal)
+   ============================================================================ */
+const METRICAS = ['visualizacoes','curtidas','comentarios','cliques','compartilhamentos'];
+const temMetrica = d => METRICAS.some(k=>Number(d[k])>0);
+const publicadaAlgum = d => d.status==='🟢 Publicado' || STATUS_EDITORIAL_PUBLICADO_OU_POSTERIOR.includes(d.statusEditorial);
+const pubSemMetrica = d => STATUS_EDITORIAL_PUBLICADO_OU_POSTERIOR.includes(d.statusEditorial) && !(Number(d.visualizacoes)>0);
+function hhmmNorm(s){ const m = String(s||'').trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/); return m ? String(m[1]).padStart(2,'0')+':'+m[2] : null; }
+
+const VISOES = [
+  {id:'todas',          rotulo:'Todas',                    fn:()=>true},
+  {id:'semStatus',      rotulo:'Sem status',               fn:d=>!activeLists().status.includes(d.status)},
+  {id:'emProducao',     rotulo:'Em produção',              fn:d=>d.status==='🔵 Em produção'},
+  {id:'emHomolog',      rotulo:'Em homologação',           fn:d=>d.status==='Em homologação'},
+  {id:'atrasadas',      rotulo:'Atrasadas',                fn:d=>!!d.atrasada, tom:'crit'},
+  {id:'vencem7',        rotulo:'Vencem em 7 dias',         fn:d=>!STATUS_FINAIS.includes(d.status) && d.diasParaPublicacao!==null && d.diasParaPublicacao>=0 && d.diasParaPublicacao<=7, tom:'warn'},
+  {id:'pubSemMetricas', rotulo:'Publicadas sem métricas',  fn:pubSemMetrica, tom:'warn'},
+  {id:'semStatusPub',   rotulo:'Sem status de publicação', fn:d=>!d.statusEditorial}
+];
+
+function listaDemandasBase(){ return applySpecialFilter(applyFilters(state.demandas)); }
+function aplicarBusca(list){
+  const s = state.table.search.trim().toLowerCase();
+  return s ? list.filter(d=> [d.id,d.chamadoTopdesk,d.titulo,d.solicitante,d.areaSolicitante,d.projeto,d.responsavel,d.editoria,d.observacoes].join(' ').toLowerCase().includes(s)) : list;
+}
+
+/* ---------- 1) listas de trabalho ---------- */
+function renderVisoes(){
+  const el = $('#visChips'); if(!el) return;
+  el.hidden = (state.table.modo==='resultados');
+  if(el.hidden) return;
+  const base = listaDemandasBase();
+  el.innerHTML = VISOES.map(v=>{
+    const n = v.id==='todas' ? base.length : base.filter(v.fn).length;
+    return `<button type="button" class="vis-chip ${state.table.visao===v.id?'on':''} ${v.tom||''}" data-vis="${v.id}">${esc(v.rotulo)} <b>${n}</b></button>`;
+  }).join('') + (!state.readOnly && state.table.visao==='pubSemMetricas'
+    ? `<button type="button" class="vis-cta" id="visIrResultados">Lançar resultados em grade →</button>` : '');
+  $$('.vis-chip', el).forEach(b=> b.onclick = ()=>{ state.table.visao = b.dataset.vis; state.table.page = 1; renderVisoes(); renderTableBody(); });
+  const cta = $('#visIrResultados', el); if(cta) cta.onclick = ()=>{ state.table.modo='resultados'; state.table.page=1; renderDemandasView(); };
+}
+
+/* ---------- tela ---------- */
+function renderDemandasView(){
+  const c = $('#content');
+  const ro = state.readOnly;
+  if(ro && state.table.modo==='resultados') state.table.modo = 'tabela';
+  const modoRes = state.table.modo==='resultados';
+  c.innerHTML = `
+    ${pageBanner({
+      slim:true,
+      eyebrow:'Base única de registros',
+      title:'Demandas & <em>Comunicações</em>',
+      sub:'Consulte, filtre e atualize cada registro — direto na tabela, em lote ou lançando os resultados.'
+    })}
+    <div class="filterbar" id="filterbar"></div>
+    ${renderActiveFilterChips()}
+    <div class="vis-chips" id="visChips"></div>
+    <div class="table-toolbar">
+      <div class="search-box">${ICONS.search}<input type="text" id="tblSearch" placeholder="Buscar por ID, chamado, tema, solicitante..." value="${esc(state.table.search)}"></div>
+      ${ro? '' : `<div class="seg" id="modoSeg"><button type="button" data-modo="tabela" class="${modoRes?'':'on'}">Tabela</button><button type="button" data-modo="resultados" class="${modoRes?'on':''}">Atualizar resultados</button></div>`}
+      ${ro? '' : `<button class="btn btn-primary" id="btnNewFromTable">${ICONS.plus} Nova Demanda</button>`}
+    </div>
+    <div id="bulkBar" class="bulk-bar" hidden></div>
+    <div class="table-wrap" id="areaTabela" ${modoRes?'hidden':''}>
+      <div class="table-scroll-top" id="tableScrollTop"><div class="table-scroll-top-inner" id="tableScrollTopInner"></div></div>
+      <div class="table-scroll-main" id="tableScrollMain"><table class="datatable" id="demTable"><thead></thead><tbody></tbody></table></div>
+      <div class="table-footer">
+        <div class="pagesize">Mostrar
+          <select id="pageSizeSel">${[10,25,50,100].map(n=>`<option value="${n}" ${state.table.pageSize===n?'selected':''}>${n}</option>`).join('')}</select>
+          registros</div>
+        <div class="pager" id="pager"></div>
+      </div>
+    </div>
+    <div id="areaResultados" ${modoRes?'':'hidden'}></div>
+  `;
+  const fb = $('#filterbar'); fb.innerHTML = renderFilterBar(); bindFilterBar(fb, renderDemandasView);
+  bindActiveFilterChips(c);
+  $('#tblSearch').oninput = debounce(e=>{ state.table.search = e.target.value; state.table.page=1; if(state.table.modo==='resultados') renderGridResultados(); else { renderVisoes(); renderTableBody(); } },220);
+  const btnNewFT = $('#btnNewFromTable'); if(btnNewFT) btnNewFT.onclick = ()=> openDemandaModal(null);
+  $$('#modoSeg button').forEach(b=> b.onclick = ()=>{ state.table.modo = b.dataset.modo; state.table.page = 1; renderDemandasView(); });
+  $('#pageSizeSel').onchange = e=>{ state.table.pageSize = Number(e.target.value); state.table.page=1; renderTableBody(); };
+  renderVisoes();
+  if(modoRes){ renderGridResultados(); }
+  else { renderTableHead(); renderTableBody(); renderBulkBar(); }
+}
+
 function renderTableHead(){
   const thead = $('#demTable thead');
-  thead.innerHTML = `<tr>${TABLE_COLUMNS.map(col=>{
+  thead.innerHTML = `<tr>${state.readOnly? '' : '<th class="col-sel"><input type="checkbox" id="selAll" title="Selecionar todos os chamados da lista"></th>'}${TABLE_COLUMNS.map(col=>{
     const active = state.table.sortKey===col.key;
     const arrow = active? (state.table.sortDir==='asc'?'▲':'▼') : '';
     return `<th data-sort="${col.key}">${col.label} <span class="arrow">${arrow}</span></th>`;
@@ -4437,6 +4627,13 @@ function renderTableHead(){
     else { state.table.sortKey=k; state.table.sortDir='asc'; }
     renderTableBody();
   });
+  const all = $('#selAll', thead);
+  if(all) all.onchange = ()=>{
+    const ids = state.table._ids || [];
+    if(all.checked) ids.forEach(id=>state.table.sel.add(id)); else ids.forEach(id=>state.table.sel.delete(id));
+    $$('.row-sel').forEach(cb=>{ cb.checked = state.table.sel.has(cb.dataset.id); cb.closest('tr').classList.toggle('sel', cb.checked); });
+    renderBulkBar();
+  };
 }
 function bindDualScroll(){
   const top = $('#tableScrollTop'), main = $('#tableScrollMain'), inner = $('#tableScrollTopInner'), table = $('#demTable');
@@ -4446,11 +4643,118 @@ function bindDualScroll(){
   top.onscroll = ()=>{ if(syncing) return; syncing=true; main.scrollLeft = top.scrollLeft; syncing=false; };
   main.onscroll = ()=>{ if(syncing) return; syncing=true; top.scrollLeft = main.scrollLeft; syncing=false; };
 }
+
+/* ---------- 2) células editáveis direto na tabela ---------- */
+const INLINE_CELLS = {
+  status: d=>{
+    const L = activeLists(); const v = d.status||'';
+    const ops = (v && !L.status.includes(v)) ? [...L.status, v] : L.status;
+    return `<select class="inl inl-sel" data-id="${d.id}" data-inl="status" aria-label="Status" style="background-color:${STATUS_TINT[v]||'var(--gray-100)'};color:${STATUS_COLOR[v]||'var(--gray-500)'}">${['', ...ops].map(o=>`<option value="${esc(o)}" ${o===v?'selected':''}>${o===''?'— sem status':esc(o)}</option>`).join('')}</select>`;
+  },
+  statusEditorial: d=>{
+    const L = activeLists(); const v = d.statusEditorial||'';
+    const ops = (v && !L.statusEditorial.includes(v)) ? [...L.statusEditorial, v] : L.statusEditorial;
+    return `<select class="inl inl-sel" data-id="${d.id}" data-inl="statusEditorial" aria-label="Status da publicação" style="background-color:${STATUS_ED_TINT[v]||'var(--gray-100)'};color:${STATUS_ED_COLOR[v]||'var(--gray-500)'}">${['', ...ops].map(o=>`<option value="${esc(o)}" ${o===v?'selected':''}>${o===''?'— sem status':esc(o)}</option>`).join('')}</select>`;
+  },
+  dataPlanejadaPublicacao: d=>{
+    const dot = d.atrasada ? ' <span style="color:var(--red);font-weight:800" title="Data planejada vencida e status não finalizado">●</span>' : '';
+    if(!d.dataPlanejadaPublicacao && d.dataPlanejadaTexto) return `<span class="inl-raw" data-abrir="${d.id}" data-aba="publicacao" title="Mais de uma data (valor da planilha). Clique para editar no painel lateral.">${esc(d.dataPlanejadaTexto)}</span>${dot}`;
+    return `<input type="date" class="inl inl-date" data-id="${d.id}" data-inl="dataPlanejadaPublicacao" value="${d.dataPlanejadaPublicacao||''}" aria-label="Data planejada de publicação">${dot}`;
+  },
+  horarioPlanejado: d=>{
+    const raw = (d.horarioPlanejado||'').trim();
+    if(raw && !hhmmNorm(raw)) return `<span class="inl-raw" data-abrir="${d.id}" data-aba="publicacao" title="Valor da planilha. Clique para editar no painel lateral.">${esc(raw)}</span>`;
+    return `<input type="time" class="inl inl-time" data-id="${d.id}" data-inl="horarioPlanejado" value="${hhmmNorm(raw)||''}" aria-label="Horário planejado">`;
+  }
+};
+const celulaTabela = (key,d)=> (!state.readOnly && INLINE_CELLS[key]) ? INLINE_CELLS[key](d) : TABLE_CELLS[key](d);
+const ROTULO_INLINE = {status:'Status', statusEditorial:'Status (Publicação)', dataPlanejadaPublicacao:'Data planejada', horarioPlanejado:'Horário planejado', projeto:'Projeto'};
+
+function toastDesfazer(msg, aoDesfazer){
+  const c = $('#toastContainer'); if(!c) return;
+  const el = document.createElement('div'); el.className = 'toast';
+  el.innerHTML = `<span class="dot"></span><span>${esc(msg)}</span><button type="button" class="toast-act">Desfazer</button>`;
+  c.appendChild(el);
+  let feito = false;
+  const sumir = ()=>{ el.style.opacity='0'; el.style.transition='opacity .25s'; setTimeout(()=>el.remove(),250); };
+  el.querySelector('.toast-act').onclick = async ()=>{ if(feito) return; feito = true; sumir(); await aoDesfazer(); };
+  setTimeout(sumir, 9000);
+}
+
+function atualizarTelaDemandas(){
+  if(state.view !== 'demandas'){ renderView(); return; }
+  renderVisoes();
+  if(state.table.modo==='resultados') atualizarResumoRes(); else { renderTableBody(); renderBulkBar(); }
+}
+
+/* Aplica a alteração na tela na hora, grava em segundo plano e oferece "Desfazer". */
+async function aplicarEdicao(ids, patch, rotulo){
+  const antes = ids.map(id=>{ const r = ds.getDemanda(id) || {}; const campos = {}; Object.keys(patch).forEach(k=>{ campos[k] = r[k] ?? ''; }); return {id, campos}; });
+  const prom = ds.aplicarPatches(ids.map(id=>({id, patch})));
+  recomputeDerived(); atualizarTelaDemandas();
+  const salvo = await prom;
+  recomputeDerived(); atualizarTelaDemandas();
+  if(!salvo){ toast('Não foi possível salvar. A alteração foi desfeita.', true); return false; }
+  toastDesfazer(`${rotulo}: ${ids.length} chamado${ids.length>1?'s':''} atualizado${ids.length>1?'s':''} e salvo${ids.length>1?'s':''} na base.`, async ()=>{
+    const p2 = ds.aplicarPatches(antes.map(a=>({id:a.id, patch:a.campos})));
+    recomputeDerived(); atualizarTelaDemandas();
+    const ok = await p2; recomputeDerived(); atualizarTelaDemandas();
+    toast(ok ? 'Alteração desfeita.' : 'Não foi possível desfazer.', !ok);
+  });
+  return true;
+}
+
+/* ---------- 3) ações em lote ---------- */
+function renderBulkBar(){
+  const el = $('#bulkBar'); if(!el) return;
+  const n = state.table.sel.size;
+  if(!n || state.readOnly || state.table.modo!=='tabela'){ el.hidden = true; el.innerHTML = ''; return; }
+  const L = activeLists();
+  const opts = arr => arr.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+  const totalLista = (state.table._ids||[]).length;
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="bb-n"><b>${n}</b> selecionado${n>1?'s':''}
+      <button type="button" class="bb-lnk" data-bb="limpar">Limpar seleção</button>
+      ${n<totalLista ? `<button type="button" class="bb-lnk" data-bb="todos">Selecionar os ${totalLista} da lista</button>` : ''}</div>
+    <label>Status <select data-bulk="status"><option value="">Alterar…</option><option value="__limpar__">— sem status</option>${opts(L.status)}</select></label>
+    <label>Status (Publicação) <select data-bulk="statusEditorial"><option value="">Alterar…</option><option value="__limpar__">— sem status</option>${opts(L.statusEditorial)}</select></label>
+    <label>Projeto <select data-bulk="projeto"><option value="">Alterar…</option><option value="__limpar__">— sem projeto</option>${opts(L.projetos)}</select></label>
+    <label>Data planejada <input type="date" data-bulk="dataPlanejadaPublicacao"></label>
+    <label>Horário <input type="time" data-bulk="horarioPlanejado"></label>
+    <button type="button" class="bb-del" data-bb="excluir">Excluir</button>`;
+  const ids = ()=> [...state.table.sel];
+  $$('[data-bb]', el).forEach(b=> b.onclick = ()=>{
+    const a = b.dataset.bb;
+    if(a==='limpar'){ state.table.sel.clear(); renderTableBody(); renderBulkBar(); }
+    else if(a==='todos'){ (state.table._ids||[]).forEach(id=>state.table.sel.add(id)); renderTableBody(); renderBulkBar(); }
+    else if(a==='excluir'){
+      const k = ids().length;
+      openConfirm('Excluir chamados', `<p>Excluir <b>${k}</b> chamado${k>1?'s':''}? Esta ação não pode ser desfeita.</p>`, async ()=>{
+        const lista = ids(); state.table.sel.clear();
+        const prom = ds.deleteDemandas(lista); recomputeDerived(); atualizarTelaDemandas();
+        const ok = await prom; toast(ok===false ? 'Não foi possível excluir na base.' : `${k} chamado${k>1?'s':''} excluído${k>1?'s':''}.`, ok===false);
+        if(ok===false){ await refreshData(); }
+      }, 'Excluir');
+    }
+  });
+  $$('[data-bulk]', el).forEach(c=> c.onchange = ()=>{
+    const campo = c.dataset.bulk; let valor = c.value; if(!valor) return;
+    const patch = {}; let rotulo = ROTULO_INLINE[campo] || campo; let legivel = valor;
+    if(valor==='__limpar__'){ valor = ''; legivel = '(vazio)'; }
+    patch[campo] = valor;
+    if(campo==='dataPlanejadaPublicacao' && valor){ patch.dataPlanejadaTexto = ''; legivel = fmtD(valor); }
+    const lista = ids(); c.value = '';
+    const aplicar = ()=> aplicarEdicao(lista, patch, rotulo);
+    if(lista.length >= 2) openConfirm('Alterar em lote', `<p>Alterar <b>${esc(rotulo)}</b> para <b>${esc(legivel)}</b> em <b>${lista.length}</b> chamados?</p>`, aplicar, 'Aplicar');
+    else aplicar();
+  });
+}
+
+/* ---------- tabela ---------- */
 function renderTableBody(){
-  let list = applyFilters(state.demandas);
-  list = applySpecialFilter(list);
-  const s = state.table.search.trim().toLowerCase();
-  if(s) list = list.filter(d=> [d.id,d.chamadoTopdesk,d.titulo,d.solicitante,d.areaSolicitante,d.projeto,d.responsavel,d.editoria,d.observacoes].join(' ').toLowerCase().includes(s));
+  const visao = VISOES.find(v=>v.id===state.table.visao) || VISOES[0];
+  let list = aplicarBusca(listaDemandasBase().filter(visao.fn));
   const key = state.table.sortKey, dir = state.table.sortDir==='asc'?1:-1;
   list = list.slice().sort((a,b)=>{
     let va=a[key], vb=b[key];
@@ -4458,48 +4762,168 @@ function renderTableBody(){
     if(typeof va==='number' && typeof vb==='number') return (va-vb)*dir;
     return String(va).localeCompare(String(vb),'pt-BR')*dir;
   });
+  state.table._ids = list.map(d=>d.id);
   const total = list.length;
   const pageSize = state.table.pageSize;
   const totalPages = Math.max(1, Math.ceil(total/pageSize));
   if(state.table.page>totalPages) state.table.page = totalPages;
   const startIdx = (state.table.page-1)*pageSize;
   const pageItems = list.slice(startIdx, startIdx+pageSize);
+  const ro = state.readOnly;
 
   const tbody = $('#demTable tbody');
   if(!pageItems.length){
-    tbody.innerHTML = `<tr><td colspan="${TABLE_COLUMNS.length+1}">${emptyState('Nenhuma demanda encontrada para os filtros selecionados.')}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${TABLE_COLUMNS.length+(ro?1:2)}">${emptyState('Nenhuma demanda encontrada para os filtros selecionados.')}</td></tr>`;
   } else {
     tbody.innerHTML = pageItems.map(d=>`
-      <tr data-id="${d.id}">
-        ${TABLE_COLUMNS.map(col=>`<td>${TABLE_CELLS[col.key](d)}</td>`).join('')}
+      <tr data-id="${d.id}" class="${state.table.sel.has(d.id)?'sel':''}">
+        ${ro? '' : `<td class="col-sel"><input type="checkbox" class="row-sel" data-id="${d.id}" ${state.table.sel.has(d.id)?'checked':''} aria-label="Selecionar ${d.id}"></td>`}
+        ${TABLE_COLUMNS.map(col=>`<td>${celulaTabela(col.key,d)}</td>`).join('')}
         <td><div class="row-actions">
-          <button class="icon-btn" data-act="view" title="Visualizar">${ICONS.eye}</button>
-          ${state.readOnly? '' : `
-          <button class="icon-btn" data-act="edit" title="Editar">${ICONS.edit}</button>
+          <button class="icon-btn" data-act="view" title="Abrir painel lateral">${ICONS.eye}</button>
+          ${ro? '' : `
           <button class="icon-btn" data-act="dup" title="Duplicar">${ICONS.copy}</button>
           <button class="icon-btn danger" data-act="del" title="Excluir">${ICONS.trash}</button>`}
         </div></td>
       </tr>`).join('');
   }
-  $$('tr[data-id]', tbody).forEach(tr=>{
-    tr.addEventListener('click', (e)=>{
-      const id = tr.dataset.id;
-      const act = e.target.closest('[data-act]');
-      if(act){
-        e.stopPropagation();
-        const a = act.dataset.act;
-        if(a==='view') openDetailModal(id);
-        else if(a==='edit') openDemandaModal(id);
-        else if(a==='dup') doDuplicate(id);
-        else if(a==='del') confirmDelete(id);
-      } else {
-        openDetailModal(id);
-      }
-    });
-  });
+  tbody.onclick = (e)=>{
+    const tr = e.target.closest('tr[data-id]'); if(!tr) return;
+    const id = tr.dataset.id;
+    if(e.target.closest('.col-sel, .inl')) return;                 // caixas de seleção e campos editáveis não abrem o painel
+    const raw = e.target.closest('.inl-raw');
+    if(raw){ openDemandaModal(raw.dataset.abrir, null, raw.dataset.aba); return; }
+    const act = e.target.closest('[data-act]');
+    if(act){
+      const a = act.dataset.act;
+      if(a==='view') openDemandaModal(id);
+      else if(a==='dup') doDuplicate(id);
+      else if(a==='del') confirmDelete(id);
+    } else openDemandaModal(id);
+  };
+  tbody.onchange = (e)=>{
+    const cb = e.target.closest('.row-sel');
+    if(cb){
+      if(cb.checked) state.table.sel.add(cb.dataset.id); else state.table.sel.delete(cb.dataset.id);
+      cb.closest('tr').classList.toggle('sel', cb.checked);
+      renderBulkBar(); atualizarSelAll(); return;
+    }
+    const el = e.target.closest('.inl'); if(!el) return;
+    const id = el.dataset.id, campo = el.dataset.inl, valor = el.value;
+    const reg = ds.getDemanda(id); if(!reg) return;
+    if(String(reg[campo]??'') === String(valor)) return;
+    const patch = {[campo]: valor};
+    if(campo==='dataPlanejadaPublicacao' && valor) patch.dataPlanejadaTexto = '';
+    aplicarEdicao([id], patch, ROTULO_INLINE[campo]||campo);
+  };
   renderPager(total, totalPages);
   bindDualScroll();
+  atualizarSelAll();
 }
+function atualizarSelAll(){
+  const all = $('#selAll'); if(!all) return;
+  const ids = state.table._ids || []; const n = ids.filter(id=>state.table.sel.has(id)).length;
+  all.checked = ids.length>0 && n===ids.length; all.indeterminate = n>0 && n<ids.length;
+}
+
+/* ---------- 4) modo "Atualizar resultados" (grade de métricas) ---------- */
+const COLUNAS_RES = [['visualizacoes','Visualizações'],['curtidas','Curtidas / Reações'],['comentarios','Comentários'],['cliques','Cliques'],['compartilhamentos','Compartilhamentos']];
+function listaResultados(){
+  const pred = state.table.incluirTodasPub ? publicadaAlgum : pubSemMetrica;
+  const l = aplicarBusca(listaDemandasBase().filter(pred));
+  return l.slice().sort((a,b)=>{ const x=a.dataPlanejadaPublicacao||'9999', y=b.dataPlanejadaPublicacao||'9999'; return x<y?-1:x>y?1:String(a.id).localeCompare(String(b.id)); });
+}
+function renderGridResultados(){
+  const area = $('#areaResultados'); if(!area) return;
+  const lista = listaResultados(); const LIM = 300;
+  const mostrar = lista.slice(0, LIM);
+  area.innerHTML = `
+    <div class="gr-wrap">
+      <div class="gr-head">
+        <div>
+          <div class="gr-title">Atualizar resultados das publicações</div>
+          <div class="gr-sub">Preencha o que foi medido e deixe <b>em branco</b> o que não foi (em branco não é zero). Salva sozinho a cada campo. <b>Tab</b> ou <b>Enter</b> navegam; dá para <b>colar células do Excel</b>.</div>
+        </div>
+        <div class="gr-prog" id="grProg"></div>
+      </div>
+      <label class="gr-opt"><input type="checkbox" id="grTodas" ${state.table.incluirTodasPub?'checked':''}> Incluir todas as publicadas (também as que já têm métricas e as sem status de publicação)</label>
+      ${mostrar.length ? `
+      <div class="gr-scroll"><table class="grid-res"><thead><tr><th>ID</th><th>Tema da Comunicação</th><th>Publicação</th>${COLUNAS_RES.map(c=>`<th class="num">${c[1]}</th>`).join('')}<th></th></tr></thead>
+      <tbody>${mostrar.map(d=>`<tr data-id="${d.id}">
+        <td><span class="id-tag">${d.id}</span></td>
+        <td class="gr-tema" title="${esc(d.titulo)}">${esc(d.titulo)}</td>
+        <td class="gr-dt">${d.dataPlanejadaPublicacao? fmtD(d.dataPlanejadaPublicacao) : (esc(d.dataPlanejadaTexto)||'—')}</td>
+        ${COLUNAS_RES.map(c=>`<td class="num"><input type="number" min="0" step="1" inputmode="numeric" class="gr-in" data-id="${d.id}" data-campo="${c[0]}" value="${(d[c[0]]===null||d[c[0]]===undefined)?'':d[c[0]]}"></td>`).join('')}
+        <td class="gr-ok"></td></tr>`).join('')}</tbody></table></div>
+      ${lista.length>LIM ? `<div class="gr-more">Mostrando ${LIM} de ${lista.length}. Use a busca ou os filtros para chegar nos demais.</div>` : ''}`
+      : `<div class="gr-vazio">${emptyState('Nenhuma publicação aguardando resultados nos filtros atuais. 🎉')}</div>`}
+    </div>`;
+  atualizarResumoRes();
+  const gr = $('#grTodas', area); if(gr) gr.onchange = ()=>{ state.table.incluirTodasPub = gr.checked; renderGridResultados(); };
+  const tbl = $('table.grid-res', area); if(!tbl) return;
+  const matriz = ()=> $$('tbody tr', tbl).map(tr=> $$('.gr-in', tr));
+  const parse = v => { v = String(v).trim().replace(/\./g,'').replace(',','.'); if(v==='') return null; const n = Math.round(Number(v)); return isNaN(n) ? undefined : Math.max(0, n); };
+  const salvarLista = async (itens)=>{
+    // itens: [{input, id, campo, valor}] — agrupa por chamado e grava UMA vez
+    const porId = {}; itens.forEach(i=>{ (porId[i.id] = porId[i.id]||{})[i.campo] = i.valor; });
+    itens.forEach(i=> i.input.classList.add('salvando'));
+    const prom = ds.aplicarPatches(Object.keys(porId).map(id=>({id, patch: porId[id]})));
+    recomputeDerived(); atualizarResumoRes();
+    const ok = await prom; recomputeDerived();
+    itens.forEach(i=>{
+      i.input.classList.remove('salvando');
+      if(ok){ const td = i.input.closest('tr').querySelector('.gr-ok'); if(td){ td.classList.add('ok'); td.title='Salvo na base'; } }
+      else { i.input.classList.add('erro'); const r = ds.getDemanda(i.id); i.input.value = (r && r[i.campo]!==null && r[i.campo]!==undefined) ? r[i.campo] : ''; }
+    });
+    atualizarResumoRes();
+    if(!ok) toast('Não foi possível salvar. Os valores voltaram ao que está na base.', true);
+  };
+  tbl.onchange = (e)=>{
+    const inp = e.target.closest('.gr-in'); if(!inp) return;
+    const v = parse(inp.value);
+    if(v===undefined){ inp.classList.add('erro'); toast('Use apenas números inteiros (ou deixe em branco).', true); return; }
+    inp.classList.remove('erro'); inp.value = (v===null ? '' : v);
+    const reg = ds.getDemanda(inp.dataset.id); if(!reg) return;
+    if(String(reg[inp.dataset.campo]??'') === String(v??'')) return;
+    salvarLista([{input:inp, id:inp.dataset.id, campo:inp.dataset.campo, valor:v}]);
+  };
+  tbl.onkeydown = (e)=>{
+    const inp = e.target.closest('.gr-in'); if(!inp) return;
+    const m = matriz(); let r=-1, c=-1; m.forEach((linha,i)=>linha.forEach((x,j)=>{ if(x===inp){ r=i; c=j; } }));
+    let alvo = null;
+    if(e.key==='Enter' || e.key==='ArrowDown') alvo = m[r+1] && m[r+1][c];
+    else if(e.key==='ArrowUp') alvo = m[r-1] && m[r-1][c];
+    if(alvo){ e.preventDefault(); alvo.focus(); alvo.select && alvo.select(); }
+    else if(e.key==='Enter'){ e.preventDefault(); inp.blur(); }
+  };
+  tbl.onpaste = (e)=>{
+    const inp = e.target.closest('.gr-in'); if(!inp) return;
+    const txt = (e.clipboardData || window.clipboardData).getData('text');
+    if(!/[\t\n]/.test(txt.trim())) return;                 // colagem de um valor só: segue o fluxo normal
+    e.preventDefault();
+    const linhas = txt.replace(/\r/g,'').split('\n').filter((l,i,arr)=> l!=='' || i<arr.length-1).map(l=>l.split('\t'));
+    const m = matriz(); let r0=-1, c0=-1; m.forEach((linha,i)=>linha.forEach((x,j)=>{ if(x===inp){ r0=i; c0=j; } }));
+    const itens = []; let invalidos = 0;
+    linhas.forEach((cols,i)=> cols.forEach((val,j)=>{
+      const alvo = m[r0+i] && m[r0+i][c0+j]; if(!alvo) return;
+      const v = parse(val); if(v===undefined){ invalidos++; return; }
+      alvo.value = (v===null ? '' : v);
+      const reg = ds.getDemanda(alvo.dataset.id);
+      if(reg && String(reg[alvo.dataset.campo]??'') !== String(v??'')) itens.push({input:alvo, id:alvo.dataset.id, campo:alvo.dataset.campo, valor:v});
+    }));
+    if(invalidos) toast(`${invalidos} valor${invalidos>1?'es':''} não numérico${invalidos>1?'s':''} ignorado${invalidos>1?'s':''}.`, true);
+    if(itens.length){ salvarLista(itens); toast(`${itens.length} valor${itens.length>1?'es':''} colado${itens.length>1?'s':''} e salvo${itens.length>1?'s':''}.`); }
+  };
+}
+function atualizarResumoRes(){
+  const el = $('#grProg'); if(!el) return;
+  const lista = listaResultados();
+  const base = listaDemandasBase().filter(publicadaAlgum);
+  const comMet = base.filter(temMetrica).length;
+  const pend = base.filter(d=>!temMetrica(d)).length;
+  el.innerHTML = `<div class="gp-n"><b>${comMet}</b> de <b>${base.length}</b> publicadas com métricas</div><div class="gp-bar"><i style="width:${base.length? Math.round(comMet/base.length*100):0}%"></i></div><div class="gp-s">${pend} ainda sem nenhuma métrica · ${lista.length} na lista</div>`;
+}
+
 function badgeStatus(s){ return `<span class="badge" style="background:${STATUS_TINT[s]||'var(--gray-100)'};color:${STATUS_COLOR[s]||'var(--gray-500)'}">${esc(s)}</span>`; }
 
 /* ============================================================================
@@ -4618,7 +5042,7 @@ function confirmDelete(id){
 }
 
 /* ============================ MODAL: NOVA/EDITAR DEMANDA ============================ */
-function openDemandaModal(id, preset){
+function openDemandaModal(id, preset, abaInicial){
   const editing = !!id;
   const rec = editing ? ds.getDemanda(id) : null;
   const lists = activeLists();
@@ -4653,52 +5077,50 @@ function openDemandaModal(id, preset){
   };
   const notaOriginal = (idEl)=> raws[idEl] ? `<div class="pick-orig" id="${idEl}Nota">Valor na planilha: <b>${esc(raws[idEl])}</b> <button type="button" class="pick-clear" data-clear="${idEl}">limpar</button><br><span>Escolher no ${idEl==='fDataEvento'?'calendário':'relógio'} substitui este valor.</span></div>` : '';
 
+  const ro = state.readOnly;
+  const d0 = editing ? enrichList([rec], state.config)[0] : null;
+  const hist = editing ? ds.getHistory(id) : [];
+  const dhora = x => { if(!x) return '—'; const t = new Date(x); return isNaN(t) ? esc(x) : t.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
   const overlay = document.createElement('div');
-  overlay.className = 'overlay';
+  overlay.className = 'overlay drawer-overlay';
   overlay.innerHTML = `
-    <div class="modal">
-      <div class="modal-head"><h2>${editing?'Editar demanda':'Nova demanda'}</h2><div class="close" id="mClose">${ICONS.x}</div></div>
-      <div class="modal-body">
-
-        <div class="form-section-title">Planejamento</div>
-        <div class="form-grid">
-          <div class="form-field"><label>ID (painel)</label><input type="text" class="readonly-field" value="${newId}" readonly></div>
-          <div class="form-field"><label>Chamado TopDesk</label>${txt('fChamado', v('chamadoTopdesk'))}</div>
-          <div class="form-field"><label>Status</label>${sel('fStatus', v('status'), lists.status)}</div>
-          <div class="form-field"><label>Data da solicitação</label><input type="date" id="fDataSolicitacao" value="${editing? v('dataSolicitacao') : todayISO}"></div>
-          <div class="form-field"><label>Área solicitante</label>${sel('fArea', v('areaSolicitante'), lists.areas)}</div>
-          <div class="form-field"><label>Solicitante</label>${txt('fSolicitante', v('solicitante'))}</div>
-          <div class="form-field"><label>Projeto</label>${sel('fProjeto', v('projeto'), lists.projetos)}</div>
-          <div class="form-field span2"><label>Tema da Comunicação <span class="req">*</span></label>${txt('fTitulo', v('titulo'))}</div>
-          <div class="form-field"><label>Público-alvo</label>${sel('fPublico', v('publicoAlvo'), lists.publicos)}</div>
-          <div class="form-field"><label>Prioridade</label>${sel('fPrioridade', v('prioridade'), lists.prioridades.map(p=>p.nome))}</div>
-          <div class="form-field"><label>Canal principal</label>${sel('fCanalPrincipal', v('canalPrincipal'), lists.canais)}</div>
-          <div class="form-field"><label>Timeline Portal ELO</label>${sel('fTimeline', v('timelinePortalElo'), lists.timelines)}</div>
-          <div class="form-field"><label>Canais de apoio</label>${txt('fCanaisApoio', v('canaisApoio'))}</div>
-          <div class="form-field"><label>Local</label>${txt('fLocal', v('local'))}</div>
-          <div class="form-field"><label>Data do evento</label><input type="date" id="fDataEvento" value="${devIso?dev:''}">${notaOriginal('fDataEvento')}</div>
-          <div class="form-field"><label>Horário do evento</label><div class="pick-row"><input type="time" id="fHorarioEvento" value="${iniEv}" aria-label="Horário de início"><span>até</span><input type="time" id="fHorarioEventoFim" value="${fimEv}" aria-label="Horário de término"></div>${notaOriginal('fHorarioEvento')}</div>
+    <aside class="drawer" role="dialog" aria-label="${editing?'Demanda '+id:'Nova demanda'}">
+      <div class="drawer-head">
+        <div class="dh-top"><span class="id-tag">${newId}</span><div class="dh-title">${editing? esc(rec.titulo) : 'Nova demanda'}</div><div class="close" id="mClose" title="Fechar (Esc)">${ICONS.x}</div></div>
+        ${editing ? `<div class="dh-badges">
+          ${d0.status? badgeStatus(d0.status):''} ${d0.prioridade? badgePrio(d0.prioridade):''} ${d0.statusEditorial? badgeStatusEd(d0.statusEditorial):''}
+          ${d0.atrasada?'<span class="badge" style="background:var(--red-tint);color:var(--red)">Atrasada</span>':''}
+          ${d0.alertaEditorial?`<span class="badge" style="background:var(--warn-tint);color:var(--warn)">${esc(d0.alertaEditorial)}</span>`:''}
+          ${ro?'<span class="badge" style="background:var(--warn-tint);color:var(--warn)">Somente leitura</span>':''}
+        </div>` : ''}
+        <div class="drawer-tabs" role="tablist">
+          <button type="button" role="tab" data-tab="essencial" class="on">Essencial</button>
+          <button type="button" role="tab" data-tab="publicacao">Publicação</button>
+          <button type="button" role="tab" data-tab="resultados">Resultados</button>
+          <button type="button" role="tab" data-tab="historico">Histórico${hist.length?` <i class="dt-n">${hist.length}</i>`:''}</button>
         </div>
+      </div>
 
-        <div class="form-section-title">Publicação</div>
-        <div class="form-grid">
-          <div class="form-field"><label>Data planejada de publicação</label><input type="date" id="fDataPlanejada" value="${v('dataPlanejadaPublicacao')||''}"></div>
-          <div class="form-field"><label>Horário planejado</label><input type="time" id="fHorario" value="${hhmm(hp)||''}">${notaOriginal('fHorario')}</div>
-          <div class="form-field span2"><label>Data planejada (texto) <span class="hint" style="font-weight:500">— use quando houver mais de uma data ou um intervalo</span></label><div class="pick-row">${txt('fDataPlanejadaTexto', v('dataPlanejadaTexto'), 'ex.: 21/09/2026 / 22/09/2026')}<input type="date" id="fDataPlanejadaAdd" title="Adicionar uma data pelo calendário" aria-label="Adicionar data pelo calendário"></div></div>
-          <div class="form-field"><label>Status (Publicação)</label>${sel('fStatusEditorial', v('statusEditorial'), lists.statusEditorial)}</div>
-        </div>
-
-        <div class="form-section-title">Alcance <span class="hint" style="font-weight:500;text-transform:none;letter-spacing:0">(deixe em branco o que não foi medido)</span></div>
-        <div class="form-grid">
-          <div class="form-field"><label>Visualizações</label><input type="number" min="0" id="fVisualizacoes" value="${v('visualizacoes')}"></div>
-          <div class="form-field"><label>Curtidas/Reações</label><input type="number" min="0" id="fCurtidas" value="${v('curtidas')}"></div>
-          <div class="form-field"><label>Comentários</label><input type="number" min="0" id="fComentarios" value="${v('comentarios')}"></div>
-          <div class="form-field"><label>Cliques</label><input type="number" min="0" id="fCliques" value="${v('cliques')}"></div>
-          <div class="form-field"><label>Compartilhamentos</label><input type="number" min="0" id="fCompartilhamentos" value="${v('compartilhamentos')}"></div>
-        </div>
-
-        <div class="form-section-title">Campos adicionais do painel <span class="hint" style="font-weight:500;text-transform:none;letter-spacing:0">(não constam na planilha aprovada — opcionais)</span></div>
-        <div class="form-grid">
+      <div class="drawer-body">
+        <section class="dpane on" data-pane="essencial">
+          <div class="form-grid">
+            <div class="form-field span2"><label>Tema da Comunicação <span class="req">*</span></label>${txt('fTitulo', v('titulo'))}</div>
+            <div class="form-field"><label>Status</label>${sel('fStatus', v('status'), lists.status)}</div>
+            <div class="form-field"><label>Prioridade</label>${sel('fPrioridade', v('prioridade'), lists.prioridades.map(p=>p.nome))}</div>
+            <div class="form-field"><label>Projeto</label>${sel('fProjeto', v('projeto'), lists.projetos)}</div>
+            <div class="form-field"><label>Chamado TopDesk</label>${txt('fChamado', v('chamadoTopdesk'))}</div>
+            <div class="form-field"><label>Área solicitante</label>${sel('fArea', v('areaSolicitante'), lists.areas)}</div>
+            <div class="form-field"><label>Solicitante</label>${txt('fSolicitante', v('solicitante'))}</div>
+            <div class="form-field"><label>Data da solicitação</label><input type="date" id="fDataSolicitacao" value="${editing? v('dataSolicitacao') : todayISO}"></div>
+            <div class="form-field"><label>ID (painel)</label><input type="text" class="readonly-field" value="${newId}" readonly></div>
+            <div class="form-field"><label>Público-alvo</label>${sel('fPublico', v('publicoAlvo'), lists.publicos)}</div>
+            <div class="form-field"><label>Canal principal</label>${sel('fCanalPrincipal', v('canalPrincipal'), lists.canais)}</div>
+            <div class="form-field"><label>Timeline Portal ELO</label>${sel('fTimeline', v('timelinePortalElo'), lists.timelines)}</div>
+            <div class="form-field"><label>Canais de apoio</label>${txt('fCanaisApoio', v('canaisApoio'))}</div>
+          </div>
+          <details class="mais-campos">
+            <summary>Mais campos <span class="hint">(do painel; não constam na planilha aprovada — opcionais)</span></summary>
+            <div class="form-grid">
           <div class="form-field"><label>Frente Editorial</label>${sel('fEditoria', v('editoria'), lists.editorias)}</div>
           <div class="form-field"><label>Responsável / Owner</label>${sel('fResponsavel', v('responsavel'), lists.responsaveis)}</div>
           <div class="form-field"><label>Subcategoria</label>${sel('fSubcategoria', v('subcategoria'), lists.subcategorias)}</div>
@@ -4713,17 +5135,76 @@ function openDemandaModal(id, preset){
           <div class="form-field span2"><label>Bloqueio / Dependência</label><textarea id="fBloqueio">${esc(v('bloqueio'))}</textarea></div>
           <div class="form-field span2"><label>Observações gerais</label><textarea id="fObservacoes">${esc(v('observacoes'))}</textarea></div>
         </div>
+          </details>
+        </section>
+
+        <section class="dpane" data-pane="publicacao">
+          <div class="form-grid">
+            <div class="form-field"><label>Data planejada de publicação</label><input type="date" id="fDataPlanejada" value="${v('dataPlanejadaPublicacao')||''}"></div>
+            <div class="form-field"><label>Horário planejado</label><input type="time" id="fHorario" value="${hhmm(hp)||''}">${notaOriginal('fHorario')}</div>
+            <div class="form-field span2"><label>Data planejada (texto) <span class="hint" style="font-weight:500">— use quando houver mais de uma data ou um intervalo</span></label><div class="pick-row">${txt('fDataPlanejadaTexto', v('dataPlanejadaTexto'), 'ex.: 21/09/2026 / 22/09/2026')}<input type="date" id="fDataPlanejadaAdd" title="Adicionar uma data pelo calendário" aria-label="Adicionar data pelo calendário"></div></div>
+            <div class="form-field"><label>Status (Publicação)</label>${sel('fStatusEditorial', v('statusEditorial'), lists.statusEditorial)}</div>
+            <div class="form-field"><label>Local</label>${txt('fLocal', v('local'))}</div>
+            <div class="form-field"><label>Data do evento</label><input type="date" id="fDataEvento" value="${devIso?dev:''}">${notaOriginal('fDataEvento')}</div>
+            <div class="form-field"><label>Horário do evento</label><div class="pick-row"><input type="time" id="fHorarioEvento" value="${iniEv}" aria-label="Horário de início"><span>até</span><input type="time" id="fHorarioEventoFim" value="${fimEv}" aria-label="Horário de término"></div>${notaOriginal('fHorarioEvento')}</div>
+          </div>
+        </section>
+
+        <section class="dpane" data-pane="resultados">
+          <div class="form-section-title" style="margin-top:0">Alcance <span class="hint" style="font-weight:500;text-transform:none;letter-spacing:0">(deixe em branco o que não foi medido)</span></div>
+          <div class="form-grid">
+            <div class="form-field"><label>Visualizações</label><input type="number" min="0" id="fVisualizacoes" value="${v('visualizacoes')}"></div>
+            <div class="form-field"><label>Curtidas/Reações</label><input type="number" min="0" id="fCurtidas" value="${v('curtidas')}"></div>
+            <div class="form-field"><label>Comentários</label><input type="number" min="0" id="fComentarios" value="${v('comentarios')}"></div>
+            <div class="form-field"><label>Cliques</label><input type="number" min="0" id="fCliques" value="${v('cliques')}"></div>
+            <div class="form-field"><label>Compartilhamentos</label><input type="number" min="0" id="fCompartilhamentos" value="${v('compartilhamentos')}"></div>
+          </div>
+          ${editing && d0.alcance ? `<div class="dr-taxas"><div><b>${pct(d0.taxaEngajamento)}</b><span>Taxa de engajamento</span></div><div><b>${pct(d0.taxaClique)}</b><span>Taxa de clique</span></div></div>` : ''}
+        </section>
+
+        <section class="dpane" data-pane="historico">
+          ${editing ? `
+          <div class="dr-meta">
+            <div><span>Criada por</span><b>${esc(rec.criadoPor||'—')}</b><em>${dhora(rec.criadoEm)}</em></div>
+            <div><span>Última alteração</span><b>${esc(rec.alteradoPor||'—')}</b><em>${dhora(rec.ultimaAtualizacao)}</em></div>
+            <div><span>Dias em aberto</span><b>${d0.diasEmAberto===null||d0.diasEmAberto===undefined?'—':d0.diasEmAberto+' úteis'}</b><em>Aging ${d0.aging==='—'?'—':esc(d0.aging)}</em></div>
+            <div><span>Dias p/ publicação</span><b>${d0.diasParaPublicacao===null||d0.diasParaPublicacao===undefined?'—':d0.diasParaPublicacao}</b><em>${d0.atrasada?'atrasada':'no prazo'}</em></div>
+          </div>
+          <div class="detail-section-title">Histórico de alterações</div>
+          ${hist.length ? hist.map(x=>`<div class="history-item"><div class="t">${new Date(x.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} · ${esc(x.por||'')}</div><div>${esc(x.texto)}</div></div>`).join('') : '<div class="gr-vazio">Nenhuma alteração registrada ainda.</div>'}
+          ` : '<div class="gr-vazio">O histórico aparece depois que a demanda for salva.</div>'}
+        </section>
       </div>
-      <div class="modal-foot">
+
+      <div class="drawer-foot">
+        ${ro ? '<button class="btn" id="mCancel">Fechar</button>' : `
+        ${editing ? `<button class="btn btn-ghost" id="mDup">${ICONS.copy} Duplicar</button><button class="btn btn-ghost danger" id="mDel">${ICONS.trash} Excluir</button><span style="flex:1"></span>` : '<span style="flex:1"></span>'}
         <button class="btn btn-ghost" id="mCancel">Cancelar</button>
         ${!editing?'<button class="btn" id="mSaveNew">Salvar e criar outra</button>':''}
-        <button class="btn btn-primary" id="mSave">Salvar demanda</button>
+        <button class="btn btn-primary" id="mSave">${editing?'Salvar alterações':'Salvar demanda'}</button>`}
       </div>
-    </div>`;
+    </aside>`;
   document.body.appendChild(overlay);
-  $('#mClose',overlay).onclick = ()=>overlay.remove();
-  $('#mCancel',overlay).onclick = ()=>overlay.remove();
-  overlay.onclick = e=>{ if(e.target===overlay) overlay.remove(); };
+  let sujo = false;
+  const onEsc = e=>{ if(e.key==='Escape') fechar(); };
+  const fecharForce = ()=>{ document.removeEventListener('keydown', onEsc); overlay.remove(); };
+  const fechar = ()=>{ if(sujo && !ro && !window.confirm('Há alterações não salvas. Descartar?')) return; fecharForce(); };
+  overlay.addEventListener('input', ()=>{ sujo = true; });
+  overlay.addEventListener('change', ()=>{ sujo = true; });
+  document.addEventListener('keydown', onEsc);
+  $('#mClose',overlay).onclick = fechar;
+  $('#mCancel',overlay).onclick = fechar;
+  overlay.onclick = e=>{ if(e.target===overlay) fechar(); };
+  const irParaAba = nome=>{
+    $$('.drawer-tabs button', overlay).forEach(b=> b.classList.toggle('on', b.dataset.tab===nome));
+    $$('.dpane', overlay).forEach(p=> p.classList.toggle('on', p.dataset.pane===nome));
+  };
+  $$('.drawer-tabs button', overlay).forEach(b=> b.onclick = ()=> irParaAba(b.dataset.tab));
+  if(abaInicial) irParaAba(abaInicial);
+  if(ro) $$('input,select,textarea,button.pick-clear', $('.drawer-body',overlay)).forEach(e=>{ e.disabled = true; });
+  const mDup = $('#mDup',overlay); if(mDup) mDup.onclick = ()=>{ fecharForce(); doDuplicate(id); };
+  const mDel = $('#mDel',overlay); if(mDel) mDel.onclick = ()=>{ fecharForce(); confirmDelete(id); };
+  if(!editing) setTimeout(()=>{ const t = $('#fTitulo',overlay); if(t) t.focus(); }, 60);
   $$('.pick-clear', overlay).forEach(b=> b.onclick = ()=>{ raws[b.dataset.clear] = ''; const n = $('#'+b.dataset.clear+'Nota', overlay); if(n) n.remove(); });
   const addData = $('#fDataPlanejadaAdd', overlay);
   if(addData) addData.onchange = ()=>{
@@ -4741,7 +5222,7 @@ function openDemandaModal(id, preset){
     const t = idEl => $('#'+idEl,overlay).value.trim();
     const num = idEl => { const x = $('#'+idEl,overlay).value; return x==='' ? null : Number(x); };
     const titulo = t('fTitulo');
-    if(!titulo){ toast('Informe o Tema da Comunicação.', true); return null; }
+    if(!titulo){ irParaAba('essencial'); const tt = $('#fTitulo',overlay); if(tt) tt.focus(); toast('Informe o Tema da Comunicação.', true); return null; }
     const dataEvento = $('#fDataEvento',overlay).value || raws.fDataEvento;
     const iniE = $('#fHorarioEvento',overlay).value, fimE = $('#fHorarioEventoFim',overlay).value;
     const horarioEvento = iniE ? (fimE ? iniE+' - '+fimE : iniE) : (fimE || raws.fHorarioEvento);
@@ -4789,7 +5270,7 @@ function openDemandaModal(id, preset){
        olhando uma janela parada esperando o Google responder. Se a gravação falhar, a alteração é desfeita e o formulário
        reabre com o que foi digitado, para tentar de novo sem digitar tudo outra vez. */
     const promessa = editing ? ds.updateDemanda(id, payload) : ds.createDemanda(payload);
-    overlay.remove();
+    fecharForce();
     renderView();
     if(andNew) openDemandaModal(null);
     const salvo = await promessa;
@@ -4802,100 +5283,12 @@ function openDemandaModal(id, preset){
     toast(editing? 'Demanda atualizada e salva na base.' : 'Demanda cadastrada e salva na base.');
     renderView();
   }
-  $('#mSave',overlay).onclick = ()=>doSave(false);
-  if(!editing) $('#mSaveNew',overlay).onclick = ()=>doSave(true);
+  const bSave = $('#mSave',overlay); if(bSave) bSave.onclick = ()=>doSave(false);
+  const bSaveNew = $('#mSaveNew',overlay); if(bSaveNew) bSaveNew.onclick = ()=>doSave(true);
 }
 
 /* ============================ MODAL: DETALHE ============================ */
-function openDetailModal(id){
-  const cfg = state.config;
-  const d = enrichList([ds.getDemanda(id)], cfg)[0];
-  const hist = ds.getHistory(id);
-  const item = (k,val)=> `<div class="detail-item"><div class="k">${k}</div><div class="v">${(val===null||val===undefined||val==='')? '—' : val}</div></div>`;
-  const mt = x => (x===null||x===undefined||x==='') ? '—' : fmtNum(x);
-  const overlay = document.createElement('div');
-  overlay.className = 'overlay';
-  overlay.innerHTML = `
-    <div class="modal">
-      <div class="modal-head"><h2><span class="id-tag" style="font-size:13px">${d.id}</span> &nbsp;${esc(d.titulo)}</h2><div class="close" id="mClose">${ICONS.x}</div></div>
-      <div class="modal-body">
-        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-          ${d.status? badgeStatus(d.status):''} ${d.prioridade? badgePrio(d.prioridade):''} ${(d.sla && d.sla!=='N/A')? badgeSla(d.sla):''} ${d.statusEditorial? badgeStatusEd(d.statusEditorial):''}
-          <span class="badge" style="background:var(--gray-100);color:var(--gray-800)">${d.statusGerencial}</span>
-          ${d.atrasada?'<span class="badge" style="background:var(--red-tint);color:var(--red)">Atrasada</span>':''}
-          ${d.alertaEditorial?`<span class="badge" style="background:var(--warn-tint);color:var(--warn)">${esc(d.alertaEditorial)}</span>`:''}
-        </div>
-        <div class="detail-section-title">Planejamento</div>
-        <div class="detail-grid">
-          ${item('Chamado TopDesk', esc(d.chamadoTopdesk))}
-          ${item('Data da solicitação', fmtD(d.dataSolicitacao))}
-          ${item('Área solicitante', esc(d.areaSolicitante))}
-          ${item('Solicitante', esc(d.solicitante))}
-          ${item('Projeto', esc(d.projeto))}
-          ${item('Público-alvo', esc(d.publicoAlvo))}
-          ${item('Canal principal', esc(d.canalPrincipal))}
-          ${item('Timeline Portal ELO', esc(d.timelinePortalElo))}
-          ${item('Canais de apoio', esc(d.canaisApoio))}
-          ${item('Local', esc(d.local))}
-          ${item('Data do evento', esc(fmtDataOuTexto(d.dataEvento)))}
-          ${item('Horário do evento', esc(d.horarioEvento))}
-        </div>
-
-        <div class="detail-section-title">Publicação</div>
-        <div class="detail-grid">
-          ${item('Data planejada de publicação', d.dataPlanejadaPublicacao? fmtD(d.dataPlanejadaPublicacao) : esc(d.dataPlanejadaTexto))}
-          ${item('Horário planejado', esc(d.horarioPlanejado))}
-          ${item('Status (Publicação)', esc(d.statusEditorial))}
-          ${item('Dias em aberto', d.diasEmAberto===null||d.diasEmAberto===undefined ? null : d.diasEmAberto+' (dias úteis)')}
-          ${item('Aging', d.aging==='—' ? null : esc(d.aging))}
-          ${item('Dias p/ publicação', d.diasParaPublicacao)}
-          ${item('Última atualização', fmtD(d.ultimaAtualizacao))}
-        </div>
-
-        <div class="detail-section-title">Alcance</div>
-        <div class="metric-grid">
-          <div class="metric-box"><div class="n">${mt(d.visualizacoes)}</div><div class="l">Visualizações</div></div>
-          <div class="metric-box"><div class="n">${mt(d.curtidas)}</div><div class="l">Curtidas/Reações</div></div>
-          <div class="metric-box"><div class="n">${mt(d.comentarios)}</div><div class="l">Comentários</div></div>
-          <div class="metric-box"><div class="n">${mt(d.cliques)}</div><div class="l">Cliques</div></div>
-          <div class="metric-box"><div class="n">${mt(d.compartilhamentos)}</div><div class="l">Compartilhamentos</div></div>
-          <div class="metric-box"><div class="n">${d.alcance? pct(d.taxaEngajamento):'—'}</div><div class="l">Taxa de engajamento</div></div>
-          <div class="metric-box"><div class="n">${d.alcance? pct(d.taxaClique):'—'}</div><div class="l">Taxa de clique</div></div>
-        </div>
-
-        <div class="detail-section-title">Campos adicionais do painel <span style="font-weight:500;text-transform:none;letter-spacing:0">(não constam na planilha aprovada)</span></div>
-        <div class="detail-grid">
-          ${item('Frente Editorial', esc(d.editoria))}
-          ${item('Responsável / Owner', esc(d.responsavel))}
-          ${item('Subcategoria', esc(d.subcategoria))}
-          ${item('Complexidade', d.complexidade? esc(d.complexidade)+(d.esforco? ' · '+d.esforco+' pts':'') : null)}
-          ${item('Objetivo', esc(d.objetivo))}
-          ${item('CTA', esc(d.cta))}
-          ${item('Data de início', fmtD(d.dataInicio))}
-          ${item('Data de conclusão', fmtD(d.dataConclusao))}
-          ${item('Data real de publicação', fmtD(d.dataRealPublicacao))}
-          ${item('Lead time', d.leadTime)}
-        </div>
-        ${d.descricao? `<div class="detail-item" style="margin-top:10px"><div class="k">Descrição</div><div class="v" style="font-weight:500">${esc(d.descricao)}</div></div>`:''}
-        ${d.bloqueio? `<div class="detail-item" style="margin-top:8px"><div class="k">Bloqueio / Dependência</div><div class="v" style="font-weight:500">${esc(d.bloqueio)}</div></div>`:''}
-        ${d.observacoes? `<div class="detail-item" style="margin-top:8px"><div class="k">Observações gerais</div><div class="v" style="font-weight:500">${esc(d.observacoes)}</div></div>`:''}
-
-        <div class="detail-section-title">Histórico de alterações</div>
-        ${hist.length? hist.map(h=>`<div class="history-item"><div class="t">${new Date(h.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div><div>${esc(h.texto)}</div></div>`).join('') : '<div class="empty-state" style="padding:14px">Sem alterações registradas ainda.</div>'}
-      </div>
-      <div class="modal-foot">
-        ${state.readOnly? `<button class="btn" id="mCloseFoot">Fechar</button>` : `
-        <button class="btn" id="mDup">${ICONS.copy} Duplicar</button>
-        <button class="btn btn-primary" id="mEdit">${ICONS.edit} Editar</button>`}
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  $('#mClose',overlay).onclick = ()=>overlay.remove();
-  overlay.onclick = e=>{ if(e.target===overlay) overlay.remove(); };
-  const mEdit = $('#mEdit',overlay); if(mEdit) mEdit.onclick = ()=>{ overlay.remove(); openDemandaModal(id); };
-  const mDup = $('#mDup',overlay); if(mDup) mDup.onclick = ()=>{ overlay.remove(); doDuplicate(id); };
-  const mCloseFoot = $('#mCloseFoot',overlay); if(mCloseFoot) mCloseFoot.onclick = ()=>overlay.remove();
-}
+function openDetailModal(id){ openDemandaModal(id); }
 
 /* ============================ MODAL: CONFIRMAÇÃO ============================ */
 function openConfirm(title, html, onConfirm, confirmLabel){
@@ -4909,7 +5302,7 @@ function openConfirm(title, html, onConfirm, confirmLabel){
   $('#cClose',overlay).onclick = ()=>overlay.remove();
   $('#cCancel',overlay).onclick = ()=>overlay.remove();
   overlay.onclick = e=>{ if(e.target===overlay) overlay.remove(); };
-  $('#cOk',overlay).onclick = onConfirm;
+  $('#cOk',overlay).onclick = (e)=>{ overlay.remove(); onConfirm(e); };   // fecha a confirmação e executa
 }
 function closeModal(){ $$('.overlay').forEach(o=>o.remove()); }
 
