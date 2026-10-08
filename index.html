@@ -1385,7 +1385,17 @@ tbody tr:hover{box-shadow:0 6px 18px -12px rgba(43,46,49,.8);position:relative;z
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><div class="boot-splash" id="bootSplash"><div class="bs-spin"></div><div class="bs-t">Carregando o painel…</div><div class="bs-s" id="bootSplashMsg"></div></div></div>
+<style>
+.boot-splash{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#2B2E31;text-align:center;padding:24px}
+.bs-spin{width:38px;height:38px;border-radius:50%;border:4px solid #E3E5E7;border-top-color:#AC0000;animation:bsgira 0.9s linear infinite}
+@keyframes bsgira{to{transform:rotate(360deg)}}
+.bs-t{font-size:16px;font-weight:700}.bs-s{font-size:13px;color:#5C6167;max-width:520px;line-height:1.5}
+.bs-erro{max-width:560px;background:#fff;border:1px solid #E3E5E7;border-radius:14px;padding:26px 28px;box-shadow:0 8px 30px rgba(0,0,0,.08);text-align:left}
+.bs-erro h2{margin:0 0 8px;font-size:18px;color:#AC0000}.bs-erro p{margin:6px 0;font-size:13px;line-height:1.55;color:#2B2E31}
+.bs-erro code{display:block;background:#F4F5F6;border-radius:8px;padding:8px 10px;font-size:12px;margin:10px 0;word-break:break-word;color:#5C6167}
+.bs-erro button{margin-top:10px;background:#AC0000;color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:13px}
+</style>
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
@@ -1678,22 +1688,42 @@ class LocalProvider{
    Apps Script. Fala com a função-ponte "/api/dados" do próprio domínio
    (mesma origem — sem CORS), que por sua vez encaminha para o Apps Script
    no servidor, longe do navegador. */
+/* Sinaliza que a LEITURA da base falhou (diferente de a base estar vazia). Nesse caso o painel NUNCA recria dados de exemplo
+   nem grava nada: mostra o erro e deixa tentar de novo — assim uma falha de rede/Google não pode apagar a base real. */
+const FALHA_LEITURA = { falhaLeitura: true };
+function fetchComTempo(url, opcoes, ms){
+  const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), ms);
+  return fetch(url, Object.assign({}, opcoes, {signal: ctl.signal})).finally(()=>clearTimeout(t));
+}
 class RemoteApiProvider{
   constructor(){ this.versao = 0; }
   async get(key){
-    for(let tentativa=1; tentativa<=2; tentativa++){
+    let ultimoErro = null;
+    for(let tentativa=1; tentativa<=3; tentativa++){
       try{
-        const r = await fetch('/api/dados?acao=ler&chave=' + encodeURIComponent(key), { cache: 'no-store' });
+        const r = await fetchComTempo('/api/dados?acao=ler&chave=' + encodeURIComponent(key), { cache: 'no-store' }, 25000);
         if(!r.ok) throw new Error('HTTP ' + r.status);
         const j = await r.json();
+        if(j.erro) throw new Error(j.erro);
         if(j.versao !== undefined) this.versao = j.versao;
         return j.valor ? JSON.parse(j.valor) : null;
       }catch(e){
-        console.error(`Falha ao ler a base remota (tentativa ${tentativa}/2):`, e);
-        if(tentativa===2) return null;
-        await new Promise(res=>setTimeout(res, 500));
+        ultimoErro = e;
+        console.error(`Falha ao ler a base remota (tentativa ${tentativa}/3):`, e);
+        if(tentativa<3) await new Promise(res=>setTimeout(res, 800*tentativa));
       }
     }
+    FALHA_LEITURA.detalhe = String(ultimoErro && ultimoErro.message || ultimoErro);
+    return FALHA_LEITURA;
+  }
+  async inicializarSeVazio(key, val){
+    const r = await fetchComTempo('/api/dados', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ acao:'inicializar', chave:key, textoJson: JSON.stringify(val), usuario: usuarioAtual() }) }, 40000);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    if(j.erro) throw new Error(j.erro);
+    if(j.versao !== undefined) this.versao = j.versao;
+    return j;   // { criado:true } ou { existente:true, valor:"..." }
   }
   async set(key, val, silencioso){
     /* A chamada ao Apps Script por fora do Google é intermitente — funciona
@@ -1735,7 +1765,7 @@ class RemoteApiProvider{
   async setLote(itens){
     for(let tentativa=1; tentativa<=2; tentativa++){
       try{
-        const r = await fetch('/api/dados', {
+        const r = await fetchComTempo('/api/dados', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
@@ -1747,7 +1777,7 @@ class RemoteApiProvider{
             versaoBase: this.versao,
             usuario: usuarioAtual()
           })
-        });
+        }, 40000);
         if(!r.ok) throw new Error('HTTP ' + r.status);
         const j = await r.json();
         if(j.erro) throw new Error(j.erro);
@@ -1795,19 +1825,40 @@ class DataService{
       this.provider.get(STORAGE_KEYS.meta)
     ]);
 
+    const falhou = [dLido, cLido, aLido, metaLido].find(x=>x===FALHA_LEITURA);
+    if(falhou) throw new Error('Não foi possível ler a base de dados (' + (FALHA_LEITURA.detalhe || 'sem resposta') + ').');
+
+    /* Base realmente vazia (primeira carga): grava os dados iniciais SÓ se o servidor confirmar que não há nada lá.
+       Se houver (outra pessoa já inicializou, ou a leitura veio incompleta), usa o que o servidor devolver. */
+    const inicializar = async (chave, valorInicial)=>{
+      if(typeof this.provider.inicializarSeVazio === 'function'){
+        const r = await this.provider.inicializarSeVazio(chave, valorInicial);
+        return r.existente ? JSON.parse(r.valor) : valorInicial;
+      }
+      await this.provider.set(chave, valorInicial);
+      return valorInicial;
+    };
+
     let d = dLido;
-    if(!d || !Array.isArray(d) || d.length===0){ d = JSON.parse(JSON.stringify(SEED_DEMANDAS)); await this.provider.set(STORAGE_KEYS.demandas, d); }
+    if(!d || !Array.isArray(d) || d.length===0){
+      /* Já havia dados na tela e a leitura veio vazia: leitura incompleta, não base vazia. Mantém a tela como está. */
+      if(this._demandas && this._demandas.length) throw new Error('A leitura da base veio vazia; os dados da tela foram mantidos.');
+      d = await inicializar(STORAGE_KEYS.demandas, JSON.parse(JSON.stringify(SEED_DEMANDAS)));
+    }
     this._demandas = d;
 
     let c = cLido;
     if(c && !c.timelines) c.timelines = JSON.parse(JSON.stringify(DEFAULT_CONFIG.timelines));
-    if(!c){ c = JSON.parse(JSON.stringify(DEFAULT_CONFIG)); await this.provider.set(STORAGE_KEYS.config, c); }
+    if(!c){
+      if(this._config) throw new Error('A leitura das configurações veio vazia; os dados da tela foram mantidos.');
+      c = await inicializar(STORAGE_KEYS.config, JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
+    }
     this._config = c;
 
     this._audit = aLido || {};
 
     let meta = metaLido;
-    if(!meta){ meta = {lastUpdate:new Date().toISOString()}; await this.provider.set(STORAGE_KEYS.meta, meta); }
+    if(!meta){ meta = await inicializar(STORAGE_KEYS.meta, {lastUpdate:new Date().toISOString()}); }
     this._meta = meta;
 
     await this._migrarOwners();
@@ -2087,13 +2138,25 @@ const state = {
 let ds;
 
 async function boot(){
-  ds = new DataService(escolherProvider());
-  await ds.init();
-  ultimaSincronizacao = new Date();
-  recomputeDerived();
-  renderShell();
-  navigate('dashboard');
-  agendarAtualizacaoAutomatica();
+  const aviso = setTimeout(()=>{ const m = document.getElementById('bootSplashMsg'); if(m) m.textContent = 'A base do Google está demorando para responder. Aguarde — se passar de meio minuto, aparecerá uma opção de tentar de novo.'; }, 8000);
+  try{
+    ds = new DataService(escolherProvider());
+    await ds.init();
+    ultimaSincronizacao = new Date();
+    recomputeDerived();
+    renderShell();
+    navigate('dashboard');
+    agendarAtualizacaoAutomatica();
+  }catch(e){
+    console.error('Falha ao iniciar o painel:', e);
+    document.getElementById('app').innerHTML = `<div class="boot-splash"><div class="bs-erro">
+      <h2>Não foi possível carregar o painel</h2>
+      <p>Nenhum dado foi alterado ou apagado. Isso costuma ser uma instabilidade momentânea de conexão ou do Google.</p>
+      <code>${esc(String(e && e.message || e))}</code>
+      <p>Clique em <b>Tentar novamente</b>. Se persistir, avise o responsável pelo painel e envie este texto de erro.</p>
+      <button id="bootRetry">Tentar novamente</button></div></div>`;
+    const b = document.getElementById('bootRetry'); if(b) b.onclick = ()=>{ document.getElementById('app').innerHTML = '<div class="boot-splash"><div class="bs-spin"></div><div class="bs-t">Carregando o painel…</div></div>'; boot(); };
+  }finally{ clearTimeout(aviso); }
 }
 
 /* Atualiza a base sozinha de tempos em tempos, sem precisar clicar em
