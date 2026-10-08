@@ -335,6 +335,16 @@ select:focus, input:focus, textarea:focus{border-color:var(--red);}
 .resp-bar-seg{height:100%;}
 .resp-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;font-size:11px;color:var(--gray-500);}
 .resp-legend span{display:inline-flex;align-items:center;gap:5px;}
+.resp-destaque{background:linear-gradient(135deg,#FBEAEA,#fff);border:1px solid #F0CFCF;border-left:4px solid var(--red);border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:12.5px;line-height:1.5;color:var(--gray-700,#3A3E42)}
+.resp-destaque b{color:var(--red-dark,#7A0000)}
+.resp-bar-fill{display:flex;height:100%;border-radius:7px;overflow:hidden;min-width:6px}
+.resp-top{background:#FDF3F3;border:1px solid #F0CFCF;}
+.resp-top:hover{background:#FBEAEA;}
+.resp-top .resp-bar-track{height:20px;border-radius:10px;} .resp-top .resp-bar-fill{border-radius:10px;}
+.resp-top .resp-row-head{font-size:14px;} .resp-top .rr-nome{color:var(--red-dark,#7A0000);}
+.rr-badge{font-style:normal;font-size:9.5px;letter-spacing:.6px;font-weight:800;background:var(--red);color:#fff;border-radius:999px;padding:2px 8px;margin-right:8px;vertical-align:middle}
+.rr-pos{font-style:normal;font-size:10.5px;font-weight:800;color:var(--gray-400);margin-right:7px;min-width:18px;display:inline-block}
+.resp-row-head .meta b{color:var(--gray-800,#2B2E31);font-weight:800}
 .legend-dot{width:8px;height:8px;border-radius:2px;display:inline-block;}
 
 /* Heatmap */
@@ -1865,6 +1875,17 @@ const CACHE_BUILD = '2026-10-08a';   // mude quando o formato dos dados mudar: i
 class DataService{
   constructor(provider){ this.provider = provider; this._demandas=null; this._config=null; this._audit=null; }
 
+  aguardarGravacoes(ms){
+    return new Promise(res=>{
+      if(!(this._salvando > 0)) return res(true);
+      const t0 = Date.now();
+      const iv = setInterval(()=>{
+        if(!(this._salvando > 0)){ clearInterval(iv); res(true); }
+        else if(Date.now() - t0 > ms){ clearInterval(iv); res(false); }
+      }, 250);
+    });
+  }
+
   /* Cópia da última versão vista, guardada no navegador. Serve só para ABRIR rápido: logo em seguida o painel lê a base de
      verdade e substitui. Nunca é gravada na base nem usada para recriar dados. */
   get usaCache(){ return (this.provider instanceof RemoteApiProvider); }
@@ -2293,24 +2314,33 @@ function agendarAtualizacaoAutomatica(){
 /* Atualiza os dados a partir do armazenamento compartilhado (útil quando
    outro analista alterou a base) sem perder a tela/filtros atuais. */
 async function refreshData(auto){
-  if(ds && ds._salvando > 0) return;
-  if(auto === true && ds.provider && typeof ds.provider.versaoRemota === 'function'){
-    /* Atualização automática: pergunta só a versão (leve). Se ninguém gravou desde a última leitura, não recarrega nada. */
-    const v = await ds.provider.versaoRemota();
-    if(v === null || v === ds.provider.versao) return;
-  } // há uma gravação em andamento: recarregar agora poderia trazer o estado antigo de volta
+  const manual = (auto !== true);          // o botão "Atualizar" chama esta função passando o evento de clique
   const btn = $('#btnRefresh');
-  if(btn){ btn.disabled = true; btn.classList.add('spinning'); }
+  if(manual && btn){ btn.disabled = true; btn.classList.add('spinning'); }   // o clique responde na hora
   try{
-    await ds.init();
+    if(ds && ds._salvando > 0){
+      /* Há uma gravação em andamento: recarregar agora poderia trazer o estado antigo de volta. A atualização automática
+         simplesmente espera o próximo ciclo; o botão (manual) espera a gravação terminar e então atualiza. */
+      if(!manual) return;
+      toast('Há uma gravação em andamento — vou atualizar assim que ela terminar.');
+      const terminou = await ds.aguardarGravacoes(60000);
+      if(!terminou){ toast('A gravação ainda não terminou. Aguarde alguns segundos e clique em Atualizar de novo.', true); return; }
+    }
+    if(!manual && ds.provider && typeof ds.provider.versaoRemota === 'function'){
+      /* Atualização automática: pergunta só a versão (leve). Se ninguém gravou desde a última leitura, não recarrega nada. */
+      const v = await ds.provider.versaoRemota();
+      if(v === null || v === ds.provider.versao) return;
+    }
+    await ds.init();                        // botão: sempre lê a base de verdade, sem atalhos
     ultimaSincronizacao = new Date();
     recomputeDerived();
     renderView();
-    if(auto !== true) toast('Dados atualizados com sucesso.');
+    if(manual) toast('Dados atualizados com sucesso.');
   }catch(e){
-    if(auto !== true) toast('Não foi possível atualizar os dados agora.', true);
+    console.error('Falha ao atualizar:', e);
+    if(manual) toast('Não foi possível atualizar agora: ' + String((e && e.message) || e).slice(0, 140), true);
   }finally{
-    if(btn){ btn.disabled = false; btn.classList.remove('spinning'); }
+    if(manual && btn){ btn.disabled = false; btn.classList.remove('spinning'); }
   }
 }
 function recomputeDerived(){
@@ -3542,7 +3572,9 @@ function handleKpiClick(id){
 }
 
 function renderRespChart(filtered){
-  /* Conta TODOS os chamados por ÁREA SOLICITANTE (coluna da planilha), empilhados por Status — todos os status que constam na planilha. */
+  /* Área demandante (coluna ÁREA SOLICITANTE): o COMPRIMENTO da barra é proporcional ao volume de chamados (a maior área
+     ocupa a largura toda e as demais são proporcionais a ela); dentro de cada barra, as cores mostram o status. A área que
+     mais demanda aparece em destaque, com a participação de cada área no total. */
   const el = $('#respChart');
   if(!filtered.length){ el.innerHTML = emptyState('Nenhum chamado para os filtros selecionados.'); return; }
   const lista = activeLists().status;
@@ -3560,18 +3592,31 @@ function renderRespChart(filtered){
   const ordem = [...lista, ''];
   const presentes = ordem.filter(s=> Object.values(por).some(x=>x.st[s]));
   const entries = Object.entries(por).sort((a,b)=>b[1].total-a[1].total);
-  let html = entries.map(([p,info])=>{
+  const totalGeral = filtered.length;
+  const maximo = entries[0][1].total;
+  const pctDe = n => (n/totalGeral*100).toFixed(n/totalGeral>=0.1 ? 0 : 1).replace('.',',')+'%';
+
+  const lider = entries[0];
+  const empatadas = entries.filter(e=>e[1].total===maximo).length;
+  const destaque = empatadas>1
+    ? `${empatadas} áreas empatam como as que mais demandam, com ${maximo} chamados cada.`
+    : `<b>${esc(lider[0])}</b> é a área que mais demanda: <b>${lider[1].total}</b> de ${totalGeral} chamados (<b>${pctDe(lider[1].total)}</b>)${entries[1] ? `, ${(lider[1].total/entries[1][1].total).toFixed(1).replace('.',',')}× a segunda (${esc(entries[1][0])}, ${entries[1][1].total})` : ''}.`;
+
+  let html = `<div class="resp-destaque">${destaque}</div>`;
+  html += entries.map(([p,info],idx)=>{
+    const ehLider = info.total===maximo;
+    const larg = info.total/maximo*100;
     const segs = ordem.filter(s=>info.st[s]).map(s=>{
       const w = info.st[s]/info.total*100;
       return `<div class="resp-bar-seg" style="width:${w}%;background:${STATUS_COLOR[s]||'var(--gray-300)'}" data-tip="<b>${esc(p)} · ${esc(nomeSt(s))}</b><br>${info.st[s]} de ${info.total} chamado${info.total===1?'':'s'} (${pct(info.st[s]/info.total)})${listaTitulosHTML(info.it[s])}"></div>`;
     }).join('');
     const resumo = ordem.filter(s=>info.st[s]).map(s=>`${info.st[s]} ${nomeSt(s).toLowerCase()}`).join(' · ');
-    return `<div class="resp-row" data-resp="${esc(p)}" data-tip="<b>${esc(p)}</b><br>${info.total} chamado${info.total===1?'':'s'}<br>${esc(resumo)}<br><i>Clique para abrir a lista</i>">
-      <div class="resp-row-head"><span>${esc(p)}</span><span class="meta">${info.total} chamado${info.total===1?'':'s'}</span></div>
-      <div class="resp-bar-track">${segs}</div>
+    return `<div class="resp-row${ehLider?' resp-top':''}" data-resp="${esc(p)}" data-tip="<b>${esc(p)}</b><br>${info.total} chamado${info.total===1?'':'s'} · ${pctDe(info.total)} do total<br>${esc(resumo)}<br><i>Clique para abrir a lista</i>">
+      <div class="resp-row-head"><span class="rr-nome">${ehLider?'<em class="rr-badge">MAIOR DEMANDANTE</em>':`<i class="rr-pos">${idx+1}º</i>`}${esc(p)}</span><span class="meta"><b>${info.total}</b> chamado${info.total===1?'':'s'} · ${pctDe(info.total)}</span></div>
+      <div class="resp-bar-track"><div class="resp-bar-fill" style="width:${larg}%">${segs}</div></div>
     </div>`;
   }).join('');
-  html += `<div class="resp-legend">${presentes.map(s=>`<span><span class="legend-dot" style="background:${STATUS_COLOR[s]||'var(--gray-300)'}"></span>${esc(nomeSt(s))}</span>`).join('')}</div>`;
+  html += `<div class="resp-legend">${presentes.map(s=>`<span><span class="legend-dot" style="background:${STATUS_COLOR[s]||'var(--gray-300)'}"></span>${esc(nomeSt(s))}</span>`).join('')}<span style="margin-left:auto">barra = volume relativo à maior área</span></div>`;
   el.innerHTML = html;
   $$('.resp-row', el).forEach(r=> r.onclick = ()=>{
     const nome = r.dataset.resp;
