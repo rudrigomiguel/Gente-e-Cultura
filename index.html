@@ -2033,7 +2033,10 @@ class DataService{
   }
   aplicarCache(c){ this._demandas = c.demandas; this._config = c.config; this._audit = c.audit || {}; this._meta = this._meta || {lastUpdate: new Date(c.ts).toISOString()}; }
 
-  async init(){
+  async init(opts){
+    opts = opts || {};
+    const mut0 = this._mut||0;
+    const antesSig = opts.silencioso ? JSON.stringify([this._demandas, this._config]) : null;
     /* As quatro leituras abaixo são independentes entre si — buscar em
        paralelo (em vez de uma depois da outra) reduz o tempo de abertura do
        painel para o tempo da mais lenta das quatro, não a soma de todas. */
@@ -2049,6 +2052,9 @@ class DataService{
 
     const falhou = [dLido, cLido, aLido, metaLido].find(x=>x===FALHA_LEITURA);
     if(falhou) throw new Error('Não foi possível ler a base de dados (' + (FALHA_LEITURA.detalhe || 'sem resposta') + ').');
+    /* Leitura automática em segundo plano: se a pessoa mexeu em algo (ou há gravação em andamento) enquanto a base era lida,
+       descarta esta leitura — ela não conhece essa alteração — e tenta de novo no próximo ciclo. */
+    if(opts.silencioso && (this._salvando > 0 || (this._mut||0) !== mut0)) return {aplicado:false};
 
     /* Base realmente vazia (primeira carga): grava os dados iniciais SÓ se o servidor confirmar que não há nada lá.
        Se houver (outra pessoa já inicializou, ou a leitura veio incompleta), usa o que o servidor devolver. */
@@ -2085,6 +2091,7 @@ class DataService{
 
     await this._migrarOwners();
     this.salvarCache();
+    return {aplicado:true, mudou: antesSig !== null && antesSig !== JSON.stringify([this._demandas, this._config])};
   }
 
   /* Alinha bases já gravadas ao quadro oficial de owners: substitui a lista de
@@ -2136,6 +2143,7 @@ class DataService{
   /* Gravações seguidas (ex.: várias mudanças de status em sequência) são JUNTAS: enquanto uma está em andamento, as novas
      esperam e saem numa única gravação com o estado mais recente — em vez de uma fila de gravações de vários segundos cada. */
   _persistDemandas(){
+    this._mut = (this._mut||0) + 1;          // marca que houve mudança local (usado pela atualização automática)
     if(this._emVoo){
       this._pendente = true;
       return new Promise(res=>{ (this._esperandoPersist = this._esperandoPersist || []).push(res); });
@@ -2504,13 +2512,64 @@ async function boot(){
    "Atualizar" — pula a vez se a aba estiver em segundo plano (evita
    chamadas desnecessárias) ou se houver algum formulário/modal aberto no
    momento (pra não arriscar perder o que a pessoa estiver digitando). */
+/* ===== Atualização automática =====
+   A cada 1 minuto (e ao voltar para a aba ou focar a janela) o painel pergunta à base só a VERSÃO — chamada leve. Se outra pessoa
+   gravou, baixa os dados e redesenha a tela mantendo a rolagem. Não atrapalha: não redesenha com painel aberto, durante arraste,
+   enquanto a pessoa digita/clica ou com gravação em andamento (nesses casos tenta de novo logo depois). */
+const AUTO_INTERVALO_MS = (window.__AUTO_MS && Number(window.__AUTO_MS)) || 60*1000;
+let _autoEmVoo = false, _autoUltimo = 0, _ultimaInteracao = 0, _autoAgendado = false, _autoEsperandoLivre = false;
+['keydown','input','change','pointerdown'].forEach(ev=> document.addEventListener(ev, ()=>{ _ultimaInteracao = Date.now(); }, true));
+function usuarioOcupado(){
+  if(document.querySelector('.overlay')) return true;                      // painel lateral / confirmação aberto
+  if(document.querySelector('.dragging, .drop-over')) return true;         // arrastando card ou comunicação
+  if(Date.now() - _ultimaInteracao < 4000) return true;                    // digitando ou clicando agora
+  const a = document.activeElement;
+  if(a && a.classList && a.classList.contains('gr-in')) return true;       // célula da grade de resultados em edição
+  return false;
+}
+function redesenharPreservando(){
+  const y = window.scrollY, m = document.querySelector('.main'), mt = m ? m.scrollTop : 0;
+  const t = document.getElementById('tableScrollMain'), sl = t ? t.scrollLeft : 0;
+  renderView();
+  window.scrollTo(0, y);
+  const m2 = document.querySelector('.main'); if(m2) m2.scrollTop = mt;
+  const t2 = document.getElementById('tableScrollMain'); if(t2) t2.scrollLeft = sl;
+}
+function redesenharQuandoLivre(){
+  if(_autoEsperandoLivre) return; _autoEsperandoLivre = true;
+  let tentativas = 0;
+  const iv = setInterval(()=>{
+    tentativas++;
+    if(!usuarioOcupado() && !(ds && ds._salvando>0)){ clearInterval(iv); _autoEsperandoLivre = false; redesenharPreservando(); toast('Atualizado automaticamente: houve alterações de outras pessoas.'); }
+    else if(tentativas > 30){ clearInterval(iv); _autoEsperandoLivre = false; }   // desiste; o próximo ciclo refaz
+  }, 2000);
+}
+async function atualizacaoAutomatica(motivo){
+  if(_autoEmVoo || !ds || document.visibilityState !== 'visible') return;
+  if(!ds.provider || typeof ds.provider.versaoRemota !== 'function') return;      // só quando há base remota
+  if(ds._salvando > 0) return;
+  if(motivo !== 'intervalo' && Date.now() - _autoUltimo < 8000) return;            // evita rajadas ao alternar de aba
+  _autoEmVoo = true; _autoUltimo = Date.now();
+  try{
+    const v = await ds.provider.versaoRemota();
+    if(v === null) return;                                                          // sem resposta agora: tenta no próximo ciclo
+    if(v === ds.provider.versao){ ultimaSincronizacao = new Date(); refreshTopStats(); return; }
+    if(usuarioOcupado()) return;                                                    // alguém mexendo: tenta no próximo ciclo
+    const r = await ds.init({silencioso:true});
+    if(!r || !r.aplicado) return;
+    ultimaSincronizacao = new Date();
+    if(!r.mudou){ recomputeDerived(); refreshTopStats(); return; }
+    recomputeDerived(); refreshTopStats();
+    if(usuarioOcupado()) redesenharQuandoLivre();
+    else { redesenharPreservando(); toast('Atualizado automaticamente: houve alterações de outras pessoas.'); }
+  }catch(e){ console.error('Atualização automática falhou:', e); }
+  finally{ _autoEmVoo = false; }
+}
 function agendarAtualizacaoAutomatica(){
-  const INTERVALO_MS = 3 * 60 * 1000; // 3 minutos
-  setInterval(()=>{
-    if(document.visibilityState !== 'visible') return;
-    if(document.querySelector('.overlay')) return;
-    refreshData(true);
-  }, INTERVALO_MS);
+  if(_autoAgendado) return; _autoAgendado = true;
+  setInterval(()=> atualizacaoAutomatica('intervalo'), AUTO_INTERVALO_MS);
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') atualizacaoAutomatica('volta'); });
+  window.addEventListener('focus', ()=> atualizacaoAutomatica('foco'));
 }
 
 /* Atualiza os dados a partir do armazenamento compartilhado (útil quando
@@ -2536,20 +2595,7 @@ async function refreshData(auto){
     location.reload();
     return;
   }
-  /* Atualização automática (a cada 3 min): leve — pergunta só a versão e só recarrega os dados se alguém gravou. */
-  try{
-    if(ds && ds._salvando > 0) return;
-    if(ds.provider && typeof ds.provider.versaoRemota === 'function'){
-      const v = await ds.provider.versaoRemota();
-      if(v === null || v === ds.provider.versao) return;
-    }
-    await ds.init();
-    ultimaSincronizacao = new Date();
-    recomputeDerived();
-    renderView();
-  }catch(e){
-    console.error('Falha na atualização automática:', e);
-  }
+  return atualizacaoAutomatica('intervalo');
 }
 function recomputeDerived(){
   const cfg = ds.getConfig();
@@ -2747,6 +2793,8 @@ function refreshTopStats(){
   const str = (ultimaSincronizacao||new Date()).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
   $('#sfTime').textContent = str;
   $('#lastUpdateChip').textContent = 'Atualizado em ' + str;
+  const chip = $('#lastUpdateChip');
+  if(chip) chip.title = 'Atualização automática a cada ' + Math.round(AUTO_INTERVALO_MS/1000) + ' s. Última verificação: ' + (ultimaSincronizacao||new Date()).toLocaleTimeString('pt-BR') + '. O botão Atualizar recarrega a página inteira.';
 }
 
 function renderView(){
